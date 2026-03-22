@@ -64,6 +64,17 @@ def on_startup():
             for col, col_type in new_cols.items():
                 if col not in existing_cols:
                     conn.execute(text(f"ALTER TABLE partes ADD COLUMN {col} {col_type}"))
+            # Eliminar constraint NOT NULL de columna 'chofer' vieja si existe
+            if "chofer" in existing_cols:
+                conn.execute(text("ALTER TABLE partes ALTER COLUMN chofer DROP NOT NULL"))
+                conn.execute(text("ALTER TABLE partes ALTER COLUMN chofer SET DEFAULT ''"))
+            # Lo mismo para 'km' y 'fecha_carga' si existen
+            for old_col in ["km", "fecha_carga"]:
+                if old_col in existing_cols:
+                    try:
+                        conn.execute(text(f"ALTER TABLE partes ALTER COLUMN {old_col} DROP NOT NULL"))
+                    except Exception:
+                        pass
             conn.commit()
 
     # Seed estados

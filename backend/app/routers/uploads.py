@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from typing import Optional, List
 import os
 import uuid
 import json
+import traceback
 
 from app.core.database import get_db
 from app.models import Parte, Adjunto, Desperfecto
@@ -52,76 +54,86 @@ def crear_parte_chofer(
     if audios is None:
         audios = []
 
-    if not dominio.strip():
-        raise HTTPException(status_code=400, detail="Dominio es requerido")
-    if not novedad.strip():
-        raise HTTPException(status_code=400, detail="Novedad es requerida")
-
-    n_parte = generar_n_parte(db)
-
-    parte = Parte(
-        n_parte=n_parte,
-        dominio=dominio.strip().upper(),
-        chofer_nombre=chofer_nombre.strip() or None,
-        novedad=novedad.strip(),
-        taller_box=taller_box.strip().upper() if taller_box.strip() else None,
-        operacion="BASE TT",
-        tipo_reparacion="RAPIDA",
-        tipo_taller="INTERNO",
-        estado="Pendiente",
-    )
-    db.add(parte)
-    db.flush()
-
-    # Crear desperfectos individuales desde problemas
     try:
-        lista_problemas = json.loads(problemas)
-    except (json.JSONDecodeError, TypeError):
-        lista_problemas = []
+        if not dominio.strip():
+            raise HTTPException(status_code=400, detail="Dominio es requerido")
+        if not novedad.strip():
+            raise HTTPException(status_code=400, detail="Novedad es requerida")
 
-    for prob in lista_problemas:
-        if isinstance(prob, dict) and prob.get("texto"):
-            db.add(Desperfecto(
-                parte_id=parte.id,
-                sector=prob.get("sector", "MECANICA").upper(),
-                descripcion=prob["texto"].strip(),
-            ))
+        n_parte = generar_n_parte(db)
 
-    # Guardar fotos
-    for foto in fotos:
+        parte = Parte(
+            n_parte=n_parte,
+            dominio=dominio.strip().upper(),
+            chofer=chofer_nombre.strip() or "",
+            chofer_nombre=chofer_nombre.strip() or None,
+            novedad=novedad.strip(),
+            taller_box=taller_box.strip().upper() if taller_box.strip() else None,
+            operacion="BASE TT",
+            tipo_reparacion="RAPIDA",
+            tipo_taller="INTERNO",
+            estado="Pendiente",
+        )
+        db.add(parte)
+        db.flush()
+
+        # Crear desperfectos individuales desde problemas
         try:
-            if foto and foto.filename:
-                filename, original, mime = save_file(parte.id, foto, "foto")
-                db.add(Adjunto(
-                    parte_id=parte.id, tipo="foto",
-                    filename=filename, original_name=original, mime_type=mime
+            lista_problemas = json.loads(problemas)
+        except (json.JSONDecodeError, TypeError):
+            lista_problemas = []
+
+        for prob in lista_problemas:
+            if isinstance(prob, dict) and prob.get("texto"):
+                db.add(Desperfecto(
+                    parte_id=parte.id,
+                    sector=prob.get("sector", "MECANICA").upper(),
+                    descripcion=prob["texto"].strip(),
                 ))
-        except Exception:
-            pass  # skip failed uploads
 
-    # Guardar audios
-    for audio in audios:
-        try:
-            if audio and audio.filename:
-                filename, original, mime = save_file(parte.id, audio, "audio")
-                db.add(Adjunto(
-                    parte_id=parte.id, tipo="audio",
-                    filename=filename, original_name=original, mime_type=mime
-                ))
-        except Exception:
-            pass
+        # Guardar fotos
+        for foto in fotos:
+            try:
+                if foto and foto.filename:
+                    filename, original, mime = save_file(parte.id, foto, "foto")
+                    db.add(Adjunto(
+                        parte_id=parte.id, tipo="foto",
+                        filename=filename, original_name=original, mime_type=mime
+                    ))
+            except Exception:
+                pass
 
-    db.commit()
-    db.refresh(parte)
+        # Guardar audios
+        for audio in audios:
+            try:
+                if audio and audio.filename:
+                    filename, original, mime = save_file(parte.id, audio, "audio")
+                    db.add(Adjunto(
+                        parte_id=parte.id, tipo="audio",
+                        filename=filename, original_name=original, mime_type=mime
+                    ))
+            except Exception:
+                pass
 
-    return {
-        "id": parte.id,
-        "n_parte": parte.n_parte,
-        "dominio": parte.dominio,
-        "chofer_nombre": parte.chofer_nombre,
-        "novedad": parte.novedad,
-        "adjuntos": len(fotos) + len(audios),
-    }
+        db.commit()
+        db.refresh(parte)
+
+        return {
+            "id": parte.id,
+            "n_parte": parte.n_parte,
+            "dominio": parte.dominio,
+            "chofer_nombre": parte.chofer_nombre,
+            "novedad": parte.novedad,
+            "adjuntos": len(fotos) + len(audios),
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        error_detail = traceback.format_exc()
+        print(f"ERROR en crear_parte_chofer: {error_detail}")
+        return JSONResponse(status_code=500, content={"detail": str(e), "trace": error_detail})
 
 
 @router.get("/partes/{parte_id}/adjuntos")

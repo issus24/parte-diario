@@ -20,6 +20,7 @@ class Parte(Base):
     id = Column(Integer, primary_key=True, index=True)
     n_parte = Column(String(20), unique=True, nullable=False)
     dominio = Column(String(60), nullable=False)
+    chofer = Column(String(100), nullable=True, default="")  # legacy column
     chofer_nombre = Column(String(100), nullable=True)
     operacion = Column(String(60), default="BASE TT")
     tipo_reparacion = Column(String(20), default="RAPIDA")
