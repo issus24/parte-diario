@@ -217,3 +217,13 @@ def actualizar_parte(parte_id: int, data: ParteUpdate, db: Session = Depends(get
     db.refresh(parte)
 
     return parte
+
+
+@router.delete("/{parte_id}", status_code=204)
+def eliminar_parte(parte_id: int, db: Session = Depends(get_db)):
+    """Elimina un parte y sus desperfectos/adjuntos (cascade)."""
+    parte = db.query(Parte).filter(Parte.id == parte_id).first()
+    if not parte:
+        raise HTTPException(status_code=404, detail="Parte no encontrado")
+    db.delete(parte)
+    db.commit()
