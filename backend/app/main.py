@@ -149,6 +149,10 @@ if os.path.exists(frontend_path):
     async def serve_manifest():
         return FileResponse(os.path.join(frontend_path, "manifest.json"))
 
+    @app.get("/manifest-chofer.json")
+    async def serve_manifest_chofer():
+        return FileResponse(os.path.join(frontend_path, "manifest-chofer.json"))
+
     @app.get("/sw.js")
     async def serve_sw():
         return FileResponse(os.path.join(frontend_path, "sw.js"), media_type="application/javascript")
