@@ -235,7 +235,11 @@ table th {
 }
 
 th.col-expand { white-space: normal; }
-th.col-shrink, td.col-shrink { width: 1%; white-space: nowrap; }
+th.col-shrink { width: 1%; white-space: nowrap; }
+
+/* Shrink all cells in shrink columns via nth-child */
+table th.col-shrink, table td { white-space: nowrap; }
+table th.col-expand, table td.cell-novedad, table td.cell-wrap { white-space: normal; word-break: break-word; }
 
 table tbody tr:hover { background: var(--bg-card-hover); }
 
