@@ -42,11 +42,16 @@ def crear_parte_chofer(
     chofer_nombre: str = Form(""),
     taller_box: str = Form(""),
     problemas: str = Form("[]"),
-    fotos: List[UploadFile] = File(default=[]),
-    audios: List[UploadFile] = File(default=[]),
+    fotos: Optional[List[UploadFile]] = File(None),
+    audios: Optional[List[UploadFile]] = File(None),
     db: Session = Depends(get_db)
 ):
     """Endpoint para choferes: crea parte con fotos y audios."""
+    if fotos is None:
+        fotos = []
+    if audios is None:
+        audios = []
+
     if not dominio.strip():
         raise HTTPException(status_code=400, detail="Dominio es requerido")
     if not novedad.strip():
@@ -84,21 +89,27 @@ def crear_parte_chofer(
 
     # Guardar fotos
     for foto in fotos:
-        if foto.size and foto.size > 0:
-            filename, original, mime = save_file(parte.id, foto, "foto")
-            db.add(Adjunto(
-                parte_id=parte.id, tipo="foto",
-                filename=filename, original_name=original, mime_type=mime
-            ))
+        try:
+            if foto and foto.filename:
+                filename, original, mime = save_file(parte.id, foto, "foto")
+                db.add(Adjunto(
+                    parte_id=parte.id, tipo="foto",
+                    filename=filename, original_name=original, mime_type=mime
+                ))
+        except Exception:
+            pass  # skip failed uploads
 
     # Guardar audios
     for audio in audios:
-        if audio.size and audio.size > 0:
-            filename, original, mime = save_file(parte.id, audio, "audio")
-            db.add(Adjunto(
-                parte_id=parte.id, tipo="audio",
-                filename=filename, original_name=original, mime_type=mime
-            ))
+        try:
+            if audio and audio.filename:
+                filename, original, mime = save_file(parte.id, audio, "audio")
+                db.add(Adjunto(
+                    parte_id=parte.id, tipo="audio",
+                    filename=filename, original_name=original, mime_type=mime
+                ))
+        except Exception:
+            pass
 
     db.commit()
     db.refresh(parte)
