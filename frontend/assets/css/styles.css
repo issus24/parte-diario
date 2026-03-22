@@ -263,7 +263,7 @@ table { width: 100%; }
 
 .desp-line:last-child { border-bottom: none; }
 
-.desp-line .badge { font-size: 0.6rem; min-width: 75px; justify-content: center; text-align: center; flex-shrink: 0; }
+.desp-line .badge { font-size: 0.6rem; width: 80px; justify-content: center; text-align: center; flex-shrink: 0; display: inline-flex; }
 
 .desp-line .desp-desc { flex: 1; }
 
