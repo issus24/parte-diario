@@ -16,14 +16,22 @@
             border:1px solid var(--border); border-bottom:none; border-radius:var(--radius) var(--radius) 0 0;
         }
         .sec-body { border:1px solid var(--border); border-radius:0 0 var(--radius) var(--radius); overflow:hidden; }
-        .sec-body table { margin:0; }
-        .sec-body th { background:var(--bg-card-hover); font-size:0.55rem; padding:0.2rem 0.4rem; }
-        .sec-body td { font-size:0.7rem; padding:0.2rem 0.4rem; vertical-align:top; border-bottom:1px solid var(--border); }
+        .sec-body table { margin:0; table-layout:fixed; width:100%; }
+        .sec-body th { background:var(--bg-card-hover); font-size:0.55rem; padding:0.2rem 0.4rem; overflow:hidden; }
+        .sec-body td { font-size:0.7rem; padding:0.2rem 0.4rem; vertical-align:top; border-bottom:1px solid var(--border); overflow:hidden; }
         .sec-body tr:last-child td { border-bottom:none; }
         .sec-body .dom { font-family:monospace; font-weight:700; font-size:0.7rem; white-space:nowrap; }
         .sec-body .fch { white-space:nowrap; color:var(--text-muted); font-size:0.65rem; }
-        .sec-body .obs { font-size:0.6rem; color:var(--text-muted); max-width:200px; }
+        .sec-body .obs { font-size:0.6rem; color:var(--text-muted); word-break:break-word; }
         .sec-empty { padding:0.4rem; text-align:center; color:var(--text-muted); font-size:0.65rem; }
+
+        /* Anchos fijos uniformes para todas las secciones */
+        .col-ing { width:6%; }
+        .col-dom { width:10%; }
+        .col-nov { width:42%; }
+        .col-tal { width:10%; }
+        .col-est { width:12%; }
+        .col-obs { width:20%; }
 
         /* Desperfectos inline compactos */
         .d-row { display:flex; align-items:center; gap:2px; margin:1px 0; }
@@ -141,8 +149,12 @@
             return `<div class="sec">
                 <div class="sec-titulo">${titulo} (${partes.length})</div>
                 <div class="sec-body"><table><thead><tr>
-                    <th>INGRESO</th><th>DOMINIO</th><th>NOVEDAD</th><th>TALLER</th><th>ESTADO</th>
-                    ${conObs ? '<th>OBS.</th>' : ''}
+                    <th class="col-ing">INGRESO</th>
+                    <th class="col-dom">DOMINIO</th>
+                    <th class="${conObs ? 'col-nov' : ''}" style="${conObs ? '' : 'width:54%;'}">NOVEDAD</th>
+                    <th class="col-tal">TALLER</th>
+                    <th class="col-est">ESTADO</th>
+                    ${conObs ? '<th class="col-obs">OBS.</th>' : ''}
                 </tr></thead><tbody>${rows}</tbody></table></div>
             </div>`;
         }
