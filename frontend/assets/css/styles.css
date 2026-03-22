@@ -336,11 +336,11 @@ table { width: 100%; }
 
 .patente-placa.mercosur .placa-texto {
     color: #1a1a1a;
-    font-size: 0.8rem;
+    font-size: 0.65rem;
     font-weight: 900;
     text-align: center;
-    padding: 3px 6px 4px;
-    letter-spacing: 0.1em;
+    padding: 2px 4px 3px;
+    letter-spacing: 0.08em;
 }
 
 /* Vieja (ABC 123) - fondo negro, franja ARGENTINA */
@@ -363,11 +363,11 @@ table { width: 100%; }
 
 .patente-placa.vieja .placa-texto {
     color: #ffffff;
-    font-size: 0.8rem;
+    font-size: 0.65rem;
     font-weight: 900;
     text-align: center;
-    padding: 3px 6px 4px;
-    letter-spacing: 0.12em;
+    padding: 2px 4px 3px;
+    letter-spacing: 0.1em;
 }
 
 /* --- MODAL --- */
