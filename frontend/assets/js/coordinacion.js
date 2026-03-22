@@ -125,7 +125,7 @@ function renderTabla() {
 
         return `<tr>
             <td class="text-muted">${num++}</td>
-            <td>${renderPatente(p.dominio)}</td>
+            <td>${renderPatente(p.dominio)}${p.chofer_nombre ? `<div style="font-size:0.7rem; color:var(--text-muted); margin-top:3px;">${p.chofer_nombre}</div>` : ''}</td>
             <td class="cell-novedad">${novedadHtml}</td>
             <td>${fechaIngreso}</td>
             <td>${getEstadoDisplay(p)}</td>
