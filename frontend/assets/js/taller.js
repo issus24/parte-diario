@@ -90,6 +90,11 @@ function getColorEstado(estadoNombre) {
     return estado ? estado.color : 'muted';
 }
 
+function esResolutivo(estadoNombre) {
+    const estado = estadosDisponibles.find(e => e.nombre === estadoNombre);
+    return estado ? estado.es_resolutivo : false;
+}
+
 function renderTabla() {
     const filtroDominio = document.getElementById('filtro-dominio').value.toUpperCase();
     const filtroTipoRep = document.getElementById('filtro-tipo-rep').value;
@@ -141,7 +146,7 @@ function renderTabla() {
         let estadoHtml = '';
         if (p._desperfectos && p._desperfectos.length > 0) {
             const total = p._desperfectos.length;
-            const resueltos = p._desperfectos.filter(d => d.estado === 'Operativo' || d.estado === 'No Aplica').length;
+            const resueltos = p._desperfectos.filter(d => esResolutivo(d.estado)).length;
             if (resueltos === total) {
                 estadoHtml = '<span class="badge badge-success">COMPLETADO</span>';
             } else {

@@ -1,7 +1,8 @@
-import { getPartes, getParte, crearParte, actualizarParte } from './api.js';
+import { getPartes, getParte, crearParte, actualizarParte, getEstados } from './api.js';
 
 let partes = [];
 let parteSeleccionado = null;
+let estadosDisponibles = [];
 
 function sectorColor(sector) {
     const map = {
@@ -14,8 +15,14 @@ function sectorColor(sector) {
     return map[(sector || '').toUpperCase()] || 'muted';
 }
 
+function esResolutivo(estadoNombre) {
+    const estado = estadosDisponibles.find(e => e.nombre === estadoNombre);
+    return estado ? estado.es_resolutivo : false;
+}
+
 // --- INIT ---
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    try { estadosDisponibles = await getEstados(); } catch {}
     document.getElementById('filtro-dominio').addEventListener('input', renderTabla);
     document.getElementById('filtro-estado').addEventListener('change', renderTabla);
     cargarPartes();
@@ -59,7 +66,7 @@ function getEstadoDisplay(p) {
     // En taller
     const total = p._desperfectos.length;
     if (total > 0) {
-        const resueltos = p._desperfectos.filter(d => d.estado === 'Operativo' || d.estado === 'No Aplica').length;
+        const resueltos = p._desperfectos.filter(d => esResolutivo(d.estado)).length;
         if (resueltos === total) return '<span class="badge badge-success">COMPLETADO</span>';
         if (resueltos > 0) return `<span class="badge badge-info">EN PROCESO ${resueltos}/${total}</span>`;
     }
