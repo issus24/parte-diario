@@ -53,10 +53,9 @@
                         <tr>
                             <th>N&#176;</th>
                             <th>DOMINIO</th>
-                            <th>CHOFER / ORIGEN</th>
-                            <th>NOVEDAD</th>
-                            <th>T. REP.</th>
-                            <th>TALLER</th>
+                            <th>CHOFER</th>
+                            <th style="min-width:250px;">PROBLEMAS REPORTADOS</th>
+                            <th>SECTOR</th>
                             <th>FECHA INGRESO</th>
                             <th>ESTADO</th>
                             <th>ACC.</th>
@@ -68,12 +67,11 @@
                             <td></td>
                             <td></td>
                             <td></td>
-                            <td></td>
                             <td>
                                 <select class="filter-input" id="filtro-estado">
                                     <option value="">Todos</option>
                                     <option value="sin-asignar">Sin asignar</option>
-                                    <option value="asignado">Asignado</option>
+                                    <option value="asignado">En taller</option>
                                     <option value="Operativo">Operativo</option>
                                 </select>
                             </td>
@@ -158,7 +156,7 @@
 
     <!-- Modal: Asignar fecha -->
     <div class="modal-overlay" id="modal-asignar">
-        <div class="modal" style="max-width:450px;">
+        <div class="modal" style="max-width:400px;">
             <div class="modal-header">
                 <h3>Asignar ingreso a taller</h3>
                 <button class="modal-close" onclick="cerrarModal('modal-asignar')">&times;</button>
@@ -168,28 +166,10 @@
                     Parte: <strong id="asignar-nparte"></strong> |
                     Dominio: <strong id="asignar-dominio"></strong>
                 </p>
+                <div id="asignar-problemas" style="margin-bottom:0.75rem;"></div>
                 <div class="form-group">
                     <label>Fecha de ingreso a taller</label>
                     <input type="date" class="form-control" id="asignar-fecha">
-                </div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
-                    <div class="form-group">
-                        <label>Tipo de Taller</label>
-                        <select class="form-control" id="asignar-tipo-taller">
-                            <option value="INTERNO">Interno</option>
-                            <option value="EXTERNO">Externo</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Taller / Box</label>
-                        <select class="form-control" id="asignar-taller-box">
-                            <option value="MECANICA">Mecanica</option>
-                            <option value="ELECTRICIDAD">Electricidad</option>
-                            <option value="HERRERIA">Herreria</option>
-                            <option value="CHAPA/PINTURA">Chapa/Pintura</option>
-                            <option value="GOMERIA">Gomeria</option>
-                        </select>
-                    </div>
                 </div>
             </div>
             <div class="modal-footer">

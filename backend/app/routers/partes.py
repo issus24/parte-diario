@@ -27,25 +27,36 @@ def generar_n_parte(db: Session) -> str:
 
 
 def recalcular_alta(db: Session, parte_id: int):
-    """Recalcula si un parte tiene alta (todos desperfectos resueltos + estado Operativo)."""
+    """Recalcula estado y alta del parte basado en desperfectos."""
     parte = db.query(Parte).filter(Parte.id == parte_id).first()
     if not parte:
         return
 
-    # Si el estado del parte es Operativo, dar alta
     estados_resolutivos = db.query(Estado.nombre).filter(Estado.es_resolutivo == True).all()
     nombres_resolutivos = {e.nombre for e in estados_resolutivos}
 
-    if parte.estado in nombres_resolutivos:
-        parte.alta = True
-    else:
-        # Verificar desperfectos si los hay
-        desperfectos = db.query(Desperfecto).filter(Desperfecto.parte_id == parte_id).all()
-        if desperfectos:
-            todos_resueltos = all(d.estado in nombres_resolutivos for d in desperfectos)
-            parte.alta = todos_resueltos
-        else:
+    desperfectos = db.query(Desperfecto).filter(Desperfecto.parte_id == parte_id).all()
+
+    if desperfectos:
+        resueltos = sum(1 for d in desperfectos if d.estado in nombres_resolutivos)
+        total = len(desperfectos)
+
+        if resueltos == total:
+            # Todos resueltos -> Operativo + alta
+            parte.estado = "Operativo"
+            parte.alta = True
+        elif resueltos > 0:
+            # Algunos resueltos -> En Proceso
+            parte.estado = "En Proceso"
             parte.alta = False
+        else:
+            # Ninguno resuelto pero ya en taller
+            if parte.fecha_ingreso and parte.estado == "Pendiente":
+                parte.estado = "Pendiente"
+            parte.alta = False
+    else:
+        # Sin desperfectos, respetar estado manual
+        parte.alta = parte.estado in nombres_resolutivos
 
     db.commit()
 

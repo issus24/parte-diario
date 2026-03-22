@@ -3,13 +3,6 @@ import { getPartes, getParte, crearParte, actualizarParte } from './api.js';
 let partes = [];
 let parteSeleccionado = null;
 
-// --- INIT ---
-document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('filtro-dominio').addEventListener('input', renderTabla);
-    document.getElementById('filtro-estado').addEventListener('change', renderTabla);
-    cargarPartes();
-});
-
 function sectorColor(sector) {
     const map = {
         'MECANICA': 'info', 'MECÁNICA': 'info',
@@ -21,10 +14,16 @@ function sectorColor(sector) {
     return map[(sector || '').toUpperCase()] || 'muted';
 }
 
+// --- INIT ---
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('filtro-dominio').addEventListener('input', renderTabla);
+    document.getElementById('filtro-estado').addEventListener('change', renderTabla);
+    cargarPartes();
+});
+
 async function cargarPartes() {
     try {
         const lista = await getPartes();
-        // Cargar detalle de cada parte para tener desperfectos
         partes = await Promise.all(lista.map(async p => {
             try {
                 const detalle = await getParte(p.id);
@@ -52,6 +51,19 @@ function actualizarStats() {
     document.getElementById('stat-total').textContent = partes.length;
 }
 
+function getEstadoDisplay(p) {
+    if (p.estado === 'Operativo') return '<span class="badge badge-success">OPERATIVO</span>';
+    if (!p.fecha_ingreso) return '<span class="badge badge-warning">SIN ASIGNAR</span>';
+    // Contar desperfectos resueltos
+    const total = p._desperfectos.length;
+    if (total > 0) {
+        const resueltos = p._desperfectos.filter(d => d.estado === 'Operativo' || d.estado === 'No Aplica').length;
+        if (resueltos === total) return '<span class="badge badge-success">COMPLETADO</span>';
+        if (resueltos > 0) return `<span class="badge badge-info">EN PROCESO ${resueltos}/${total}</span>`;
+    }
+    return '<span class="badge badge-orange">EN TALLER</span>';
+}
+
 function renderTabla() {
     const filtroDominio = document.getElementById('filtro-dominio').value.toUpperCase();
     const filtroEstado = document.getElementById('filtro-estado').value;
@@ -73,24 +85,9 @@ function renderTabla() {
 
     let num = 1;
     tbody.innerHTML = datos.map(p => {
-        const tipoRepBadge = p.tipo_reparacion === 'PROFUNDA' ? 'danger'
-            : p.tipo_reparacion === 'LENTA' ? 'warning' : 'info';
         const fechaIngreso = p.fecha_ingreso ? formatFecha(p.fecha_ingreso) : '';
-        const tallerDisplay = p.tipo_taller === 'EXTERNO' && p.taller_externo
-            ? p.taller_externo : (p.taller_box || '');
-        const sinAsignar = !p.fecha_ingreso && p.estado !== 'Operativo';
 
-        const estadoBadge = p.estado === 'Operativo'
-            ? '<span class="badge badge-success">OPERATIVO</span>'
-            : sinAsignar
-                ? '<span class="badge badge-warning">SIN ASIGNAR</span>'
-                : '<span class="badge badge-info">EN TALLER</span>';
-
-        const accion = sinAsignar
-            ? `<button class="btn btn-primary btn-sm" onclick="abrirAsignar(${p.id})">Asignar</button>`
-            : `<button class="btn btn-outline btn-sm" onclick="abrirAsignar(${p.id})">&#9998;</button>`;
-
-        // Mostrar desperfectos individuales si el parte tiene detalles cargados
+        // Novedad con desperfectos individuales
         let novedadHtml = '';
         if (p._desperfectos && p._desperfectos.length > 0) {
             novedadHtml = p._desperfectos.map(d => {
@@ -98,24 +95,25 @@ function renderTabla() {
                 return `<div class="desp-line"><span class="badge badge-${sColor}">${d.sector}</span> ${d.descripcion}</div>`;
             }).join('');
         } else {
-            // Parsear novedad separada por ". "
             const problemas = (p.novedad || '').split('. ').filter(t => t.trim());
-            if (problemas.length > 1) {
-                novedadHtml = problemas.map(t => `<div class="desp-line">${t.trim()}</div>`).join('');
-            } else {
-                novedadHtml = p.novedad || '';
-            }
+            novedadHtml = problemas.length > 1
+                ? problemas.map(t => `<div class="desp-line">${t.trim()}</div>`).join('')
+                : (p.novedad || '');
         }
+
+        const sinAsignar = !p.fecha_ingreso && p.estado !== 'Operativo';
+        const accion = sinAsignar
+            ? `<button class="btn btn-primary btn-sm" onclick="abrirAsignar(${p.id})">Asignar</button>`
+            : `<button class="btn btn-outline btn-sm" onclick="abrirAsignar(${p.id})">&#9998;</button>`;
 
         return `<tr>
             <td class="text-muted">${num++}</td>
             <td><strong style="font-family:monospace;">${p.dominio}</strong></td>
             <td>${p.chofer_nombre || p.operacion}</td>
             <td class="cell-novedad">${novedadHtml}</td>
-            <td><span class="badge badge-${tipoRepBadge}">${p.tipo_reparacion}</span></td>
-            <td>${tallerDisplay}</td>
+            <td>${p.taller_box || ''}</td>
             <td>${fechaIngreso}</td>
-            <td>${estadoBadge}</td>
+            <td>${getEstadoDisplay(p)}</td>
             <td>${accion}</td>
         </tr>`;
     }).join('');
@@ -127,7 +125,7 @@ function formatFecha(dateStr) {
     return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
-// --- MODAL NUEVO ---
+// --- MODAL NUEVO (ya no se usa tanto, los partes vienen de chofer) ---
 window.abrirModalNuevo = function() {
     document.getElementById('nuevo-dominio').value = '';
     document.getElementById('nuevo-operacion').value = 'BASE TT';
@@ -172,7 +170,7 @@ window.guardarNuevo = async function() {
     }
 };
 
-// --- MODAL ASIGNAR ---
+// --- MODAL ASIGNAR (solo fecha) ---
 window.abrirAsignar = function(parteId) {
     parteSeleccionado = partes.find(p => p.id === parteId);
     if (!parteSeleccionado) return;
@@ -180,8 +178,17 @@ window.abrirAsignar = function(parteId) {
     document.getElementById('asignar-nparte').textContent = parteSeleccionado.n_parte;
     document.getElementById('asignar-dominio').textContent = parteSeleccionado.dominio;
     document.getElementById('asignar-fecha').value = parteSeleccionado.fecha_ingreso || new Date().toISOString().split('T')[0];
-    document.getElementById('asignar-tipo-taller').value = parteSeleccionado.tipo_taller || 'INTERNO';
-    document.getElementById('asignar-taller-box').value = parteSeleccionado.taller_box || 'MECANICA';
+
+    // Mostrar problemas
+    const probEl = document.getElementById('asignar-problemas');
+    if (parteSeleccionado._desperfectos && parteSeleccionado._desperfectos.length > 0) {
+        probEl.innerHTML = parteSeleccionado._desperfectos.map(d => {
+            const sColor = sectorColor(d.sector);
+            return `<div class="desp-line"><span class="badge badge-${sColor}">${d.sector}</span> ${d.descripcion}</div>`;
+        }).join('');
+    } else {
+        probEl.innerHTML = `<div style="font-size:0.8rem; color:var(--text-secondary);">${parteSeleccionado.novedad || ''}</div>`;
+    }
 
     document.getElementById('modal-asignar').classList.add('active');
 };
@@ -192,11 +199,7 @@ window.guardarAsignacion = async function() {
     if (!fecha) return alert('Selecciona una fecha');
 
     try {
-        await actualizarParte(parteSeleccionado.id, {
-            fecha_ingreso: fecha,
-            tipo_taller: document.getElementById('asignar-tipo-taller').value,
-            taller_box: document.getElementById('asignar-taller-box').value,
-        });
+        await actualizarParte(parteSeleccionado.id, { fecha_ingreso: fecha });
         cerrarModal('modal-asignar');
         await cargarPartes();
     } catch (err) {
