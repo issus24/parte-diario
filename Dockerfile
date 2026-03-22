@@ -9,4 +9,4 @@ COPY . .
 
 EXPOSE 3001
 
-CMD sh -c "python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-3001} --app-dir backend"
+CMD ["sh", "-c", "python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-3001} --app-dir backend"]
