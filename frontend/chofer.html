@@ -220,6 +220,72 @@
             font-size: 0.7rem;
             color: var(--text-muted);
         }
+
+        /* Problemas list */
+        .problemas-list { margin-bottom: 1rem; }
+        .problema-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            position: relative;
+        }
+        .problema-card .problema-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.3rem;
+        }
+        .problema-card .problema-num {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+        .problema-card .problema-remove {
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 0 0.25rem;
+        }
+        .problema-card .problema-text {
+            font-size: 0.85rem;
+            color: var(--text);
+            margin-bottom: 0.3rem;
+        }
+        .problema-card .problema-sector {
+            font-size: 0.7rem;
+        }
+
+        .add-problema-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            width: 100%;
+            padding: 0.6rem;
+            border: 2px dashed var(--primary);
+            border-radius: 8px;
+            background: var(--primary-light);
+            color: var(--primary);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            margin-bottom: 1.25rem;
+        }
+        .add-problema-btn:hover { background: rgba(34,197,94,0.2); }
+
+        .problema-input-area {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
     </style>
 </head>
 <body>
@@ -247,16 +313,26 @@
                 <input type="text" class="form-control-lg" id="inp-nombre" placeholder="Nombre del chofer">
             </div>
 
+            <!-- Problemas agregados -->
             <div class="form-section">
-                <label>Descripcion del problema</label>
-                <textarea class="form-control-lg" id="inp-novedad" rows="3" placeholder="Describe el desperfecto o problema..."></textarea>
-            </div>
+                <label>Problemas reportados</label>
+                <div class="problemas-list" id="problemas-list"></div>
 
-            <!-- Sector sugerido -->
-            <div class="sector-suggestion" id="sector-suggestion">
-                <div class="label">Especialidad detectada</div>
-                <div class="sector-chips" id="sector-chips"></div>
-                <div class="sector-confidence" id="sector-confidence"></div>
+                <!-- Input para agregar problema -->
+                <div class="problema-input-area">
+                    <textarea class="form-control-lg" id="inp-novedad" rows="2" placeholder="Describe el desperfecto..." style="margin-bottom:0.5rem;"></textarea>
+
+                    <!-- Sector sugerido -->
+                    <div class="sector-suggestion" id="sector-suggestion">
+                        <div class="label">Especialidad detectada</div>
+                        <div class="sector-chips" id="sector-chips"></div>
+                        <div class="sector-confidence" id="sector-confidence"></div>
+                    </div>
+
+                    <button type="button" class="add-problema-btn" onclick="agregarProblema()">
+                        + Agregar problema
+                    </button>
+                </div>
             </div>
 
             <!-- Fotos -->
@@ -298,6 +374,7 @@
 
         let sectorSeleccionado = null;
         let debounceTimer = null;
+        let problemas = []; // { texto, sector }
 
         // --- CATEGORIZADOR ---
         const inputNovedad = document.getElementById('inp-novedad');
@@ -316,6 +393,48 @@
                 mostrarSugerencia(resultado);
             }, 400);
         });
+
+        // --- PROBLEMAS ---
+        window.agregarProblema = function() {
+            const texto = inputNovedad.value.trim();
+            if (!texto) return alert('Escribi una descripcion del problema');
+
+            problemas.push({ texto, sector: sectorSeleccionado || 'MECANICA' });
+            inputNovedad.value = '';
+            sectorSeleccionado = null;
+            document.getElementById('sector-suggestion').classList.remove('active');
+            renderProblemas();
+            inputNovedad.focus();
+        };
+
+        window.quitarProblema = function(i) {
+            problemas.splice(i, 1);
+            renderProblemas();
+        };
+
+        function renderProblemas() {
+            const container = document.getElementById('problemas-list');
+            if (problemas.length === 0) {
+                container.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:0.5rem;">Sin problemas agregados</p>';
+                return;
+            }
+            container.innerHTML = problemas.map((p, i) => {
+                const sectorColor = p.sector === 'ELECTRICIDAD' ? 'warning'
+                    : p.sector === 'HERRERIA' ? 'muted'
+                    : p.sector === 'GOMERIA' ? 'success' : 'info';
+                return `
+                <div class="problema-card">
+                    <div class="problema-header">
+                        <span class="problema-num">Problema ${i + 1}</span>
+                        <button class="problema-remove" onclick="quitarProblema(${i})">&times;</button>
+                    </div>
+                    <div class="problema-text">${p.texto}</div>
+                    <span class="badge badge-${sectorColor}">${p.sector}</span>
+                </div>`;
+            }).join('');
+        }
+
+        renderProblemas();
 
         function mostrarSugerencia(resultado) {
             const container = document.getElementById('sector-suggestion');
@@ -461,8 +580,13 @@
             const nombre = document.getElementById('inp-nombre').value.trim();
             const novedad = document.getElementById('inp-novedad').value.trim();
 
+            // Si hay texto pendiente en el input, agregarlo como problema
+            if (novedad) {
+                problemas.push({ texto: novedad, sector: sectorSeleccionado || 'MECANICA' });
+            }
+
             if (!dominio) return alert('Ingresa el dominio (patente)');
-            if (!novedad) return alert('Describe el problema');
+            if (problemas.length === 0) return alert('Agrega al menos un problema');
 
             const btn = document.getElementById('submit-btn');
             btn.disabled = true;
@@ -470,12 +594,19 @@
 
             try {
                 const formData = new FormData();
+                // Novedad = resumen de todos los problemas
+                const novedadCompleta = problemas.map(p => p.texto).join('. ');
+                // Taller box = sector del primer problema (o el más frecuente)
+                const sectores = problemas.map(p => p.sector);
+                const sectorPrincipal = sectores.sort((a,b) =>
+                    sectores.filter(v => v===b).length - sectores.filter(v => v===a).length
+                )[0] || 'MECANICA';
+
                 formData.append('dominio', dominio);
                 formData.append('chofer_nombre', nombre);
-                formData.append('novedad', novedad);
-                if (sectorSeleccionado) {
-                    formData.append('taller_box', sectorSeleccionado);
-                }
+                formData.append('novedad', novedadCompleta);
+                formData.append('taller_box', sectorPrincipal);
+                formData.append('problemas', JSON.stringify(problemas));
 
                 fotos.forEach((blob, i) => {
                     formData.append('fotos', blob, `foto_${i}.jpg`);
@@ -510,7 +641,9 @@
             audios = [];
             renderFotos();
             renderAudios();
+            problemas = [];
             sectorSeleccionado = null;
+            renderProblemas();
             document.getElementById('sector-suggestion').classList.remove('active');
             document.getElementById('form-container').classList.remove('hidden');
             document.getElementById('success-screen').classList.remove('active');

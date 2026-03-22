@@ -3,9 +3,10 @@ from sqlalchemy.orm import Session
 from typing import Optional, List
 import os
 import uuid
+import json
 
 from app.core.database import get_db
-from app.models import Parte, Adjunto
+from app.models import Parte, Adjunto, Desperfecto
 from app.routers.partes import generar_n_parte
 
 router = APIRouter(tags=["uploads"])
@@ -40,6 +41,7 @@ def crear_parte_chofer(
     novedad: str = Form(...),
     chofer_nombre: str = Form(""),
     taller_box: str = Form(""),
+    problemas: str = Form("[]"),
     fotos: List[UploadFile] = File(default=[]),
     audios: List[UploadFile] = File(default=[]),
     db: Session = Depends(get_db)
@@ -65,6 +67,20 @@ def crear_parte_chofer(
     )
     db.add(parte)
     db.flush()
+
+    # Crear desperfectos individuales desde problemas
+    try:
+        lista_problemas = json.loads(problemas)
+    except (json.JSONDecodeError, TypeError):
+        lista_problemas = []
+
+    for prob in lista_problemas:
+        if isinstance(prob, dict) and prob.get("texto"):
+            db.add(Desperfecto(
+                parte_id=parte.id,
+                sector=prob.get("sector", "MECANICA").upper(),
+                descripcion=prob["texto"].strip(),
+            ))
 
     # Guardar fotos
     for foto in fotos:
