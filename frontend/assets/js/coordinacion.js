@@ -1,4 +1,5 @@
 import { getPartes, getParte, crearParte, actualizarParte, getEstados } from './api.js';
+import { renderPatente } from './patente.js';
 
 let partes = [];
 let parteSeleccionado = null;
@@ -124,7 +125,7 @@ function renderTabla() {
 
         return `<tr>
             <td class="text-muted">${num++}</td>
-            <td><strong style="font-family:monospace;">${p.dominio}</strong></td>
+            <td>${renderPatente(p.dominio)}</td>
             <td>${p.chofer_nombre || p.operacion}</td>
             <td class="cell-novedad">${novedadHtml}</td>
             <td>${fechaIngreso}</td>

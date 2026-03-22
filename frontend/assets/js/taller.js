@@ -1,4 +1,5 @@
 import { getPartes, getParte, getEstados, actualizarParte, actualizarEstadoDesperfecto } from './api.js';
+import { renderPatente } from './patente.js';
 
 let partes = [];
 let estadosDisponibles = [];
@@ -164,7 +165,7 @@ function renderTabla() {
             <td class="text-muted">${num++}</td>
             <td>${fechaIngreso}</td>
             <td>${fechaFin}</td>
-            <td><strong style="font-family:monospace;">${p.dominio}</strong></td>
+            <td>${renderPatente(p.dominio)}</td>
             <td>${p.operacion}</td>
             <td><span class="badge badge-${tipoRepBadge}">${p.tipo_reparacion}</span></td>
             <td class="cell-novedad">${novedadHtml}</td>
@@ -225,7 +226,7 @@ function renderTabletCards(datos) {
         return `<div class="tablet-card-compact" onclick="abrirEditar(${p.id})">
             <div class="tcc-header">
                 <div class="tcc-left">
-                    <span class="tcc-dominio">${p.dominio}</span>
+                    ${renderPatente(p.dominio)}
                     <span class="badge badge-${colorEstado}">${p.estado}</span>
                 </div>
                 <div class="tcc-right">

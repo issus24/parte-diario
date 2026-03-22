@@ -300,6 +300,63 @@ table { width: 100%; }
 /* Text muted utility */
 .text-muted { color: var(--text-muted); }
 
+/* --- PATENTE (placa argentina) --- */
+.patente-placa {
+    display: inline-flex;
+    flex-direction: column;
+    border-radius: 4px;
+    overflow: hidden;
+    font-family: 'Arial Black', 'Impact', sans-serif;
+    line-height: 1;
+    min-width: 110px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+
+/* Mercosur (AB 123 CD) - fondo blanco, franja azul */
+.patente-placa.mercosur {
+    background: #ffffff;
+    border: 1.5px solid #ccc;
+}
+
+.patente-placa.mercosur .placa-franja {
+    background: linear-gradient(135deg, #1a3a7a, #2855a8);
+    color: #ffffff;
+    font-size: 0.45rem;
+    text-align: center;
+    padding: 1.5px 0;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    font-family: Arial, sans-serif;
+}
+
+.patente-placa.mercosur .placa-texto {
+    color: #1a1a1a;
+    font-size: 0.95rem;
+    font-weight: 900;
+    text-align: center;
+    padding: 4px 8px 5px;
+    letter-spacing: 0.12em;
+}
+
+/* Vieja (ABC 123) - fondo verde oscuro */
+.patente-placa.vieja {
+    background: #2d5a27;
+    border: 1.5px solid #1e3d1a;
+}
+
+.patente-placa.vieja .placa-franja {
+    display: none;
+}
+
+.patente-placa.vieja .placa-texto {
+    color: #ffffff;
+    font-size: 0.95rem;
+    font-weight: 900;
+    text-align: center;
+    padding: 5px 8px 6px;
+    letter-spacing: 0.12em;
+}
+
 /* --- MODAL --- */
 .modal-overlay {
     display: none;
