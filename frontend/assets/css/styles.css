@@ -235,6 +235,7 @@ table th {
 }
 
 th.col-expand { white-space: normal; }
+th.col-shrink, td.col-shrink { width: 1%; white-space: nowrap; }
 
 table tbody tr:hover { background: var(--bg-card-hover); }
 
