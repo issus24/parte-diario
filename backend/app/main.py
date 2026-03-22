@@ -7,6 +7,8 @@ from starlette.requests import Request
 import os
 
 from app.core.config import settings
+from app.core.database import engine, Base
+from app.models import Estado, Parte, Desperfecto, SyncLog
 from app.routers import partes, desperfectos, estados
 
 
@@ -24,6 +26,25 @@ app = FastAPI(
     description="Sistema de gestion de reparaciones de flota - Logiteck",
     version="1.0.0"
 )
+
+
+@app.on_event("startup")
+def on_startup():
+    """Crea tablas y seed de estados al iniciar."""
+    from sqlalchemy.orm import Session
+    Base.metadata.create_all(bind=engine)
+    # Seed estados predefinidos
+    with Session(engine) as db:
+        if db.query(Estado).count() == 0:
+            estados_seed = [
+                Estado(nombre="Pendiente", es_resolutivo=False, color="warning", orden=0),
+                Estado(nombre="En Proceso", es_resolutivo=False, color="info", orden=1),
+                Estado(nombre="Esperando Repuesto", es_resolutivo=False, color="orange", orden=2),
+                Estado(nombre="Reparado", es_resolutivo=True, color="success", orden=3),
+                Estado(nombre="No Aplica", es_resolutivo=True, color="muted", orden=4),
+            ]
+            db.add_all(estados_seed)
+            db.commit()
 
 # CORS
 app.add_middleware(
