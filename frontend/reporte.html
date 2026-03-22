@@ -59,6 +59,13 @@
     </nav>
 
     <div class="container">
+        <!-- Contenedor para captura de imagen -->
+        <div id="captura">
+        <div class="img-hdr" id="img-hdr" style="display:none; padding:0.5rem 0; margin-bottom:0.5rem; border-bottom:2px solid var(--primary);">
+            <div style="font-size:1rem; font-weight:700;">&#128668; Parte Diario - Logiteck</div>
+            <div style="font-size:0.75rem; color:var(--text-muted);" id="img-fecha"></div>
+        </div>
+
         <div class="p-hdr"><h2>Parte Diario - Logiteck</h2><p id="p-fecha"></p></div>
 
         <div class="rpt-header no-print">
@@ -67,12 +74,15 @@
                 <input type="date" class="form-control" id="inp-fecha" style="width:145px;padding:0.3rem 0.5rem;font-size:0.8rem;">
                 <button class="btn btn-primary btn-sm" onclick="cargarReporte()">Generar</button>
                 <button class="btn btn-outline btn-sm" onclick="window.print()">&#128424;</button>
+                <button class="btn btn-success btn-sm" onclick="descargarImagen()">&#128247; Imagen</button>
             </div>
         </div>
 
         <div id="rpt"></div>
+        </div><!-- /captura -->
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script type="module">
         const inp = document.getElementById('inp-fecha');
         inp.value = new Date().toISOString().split('T')[0];
@@ -83,6 +93,7 @@
             const fecha = inp.value;
             if (!fecha) return;
             document.getElementById('p-fecha').textContent = fmtLarga(fecha);
+            document.getElementById('img-fecha').textContent = fmtLarga(fecha);
             try {
                 const partes = await fetch('/api/partes').then(r => r.json());
                 const det = await Promise.all(partes.map(p => fetch(`/api/partes/${p.id}`).then(r => r.json()).catch(() => p)));
@@ -140,6 +151,37 @@
         function ec(e) { return { 'Pendiente':'warning','Pendiente de Ingreso':'muted','En Proceso':'info','En Espera':'orange','Reparado':'success','Operativo':'success','No Aplica':'muted' }[e] || 'muted'; }
         function fmtCorta(d) { return new Date(d+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}); }
         function fmtLarga(d) { const t=new Date(d+'T12:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}); return t.charAt(0).toUpperCase()+t.slice(1); }
+
+        window.descargarImagen = async function() {
+            const el = document.getElementById('captura');
+            const imgHdr = document.getElementById('img-hdr');
+            const rptHeader = document.querySelector('.rpt-header');
+
+            // Mostrar header de imagen, ocultar controles
+            imgHdr.style.display = 'block';
+            rptHeader.style.display = 'none';
+
+            try {
+                const canvas = await html2canvas(el, {
+                    backgroundColor: '#0f1117',
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                });
+
+                // Descargar
+                const link = document.createElement('a');
+                const fecha = inp.value.replace(/-/g, '');
+                link.download = `parte-diario-${fecha}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            } catch (err) {
+                alert('Error al generar imagen: ' + err.message);
+            } finally {
+                imgHdr.style.display = 'none';
+                rptHeader.style.display = 'flex';
+            }
+        };
     </script>
 </body>
 </html>
