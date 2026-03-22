@@ -126,7 +126,6 @@ function renderTabla() {
         return `<tr>
             <td class="text-muted">${num++}</td>
             <td>${renderPatente(p.dominio)}</td>
-            <td>${p.chofer_nombre || p.operacion}</td>
             <td class="cell-novedad">${novedadHtml}</td>
             <td>${fechaIngreso}</td>
             <td>${getEstadoDisplay(p)}</td>
