@@ -241,7 +241,13 @@ table tbody tr:hover { background: var(--bg-card-hover); }
     line-height: 1.4;
 }
 
-table { table-layout: auto; width: 100%; }
+table { table-layout: fixed; width: 100%; }
+
+/* Columns that should expand to fill available space */
+th.col-expand, td.col-expand { width: auto; }
+
+/* Compact columns shrink to content */
+th:not(.col-expand) { white-space: nowrap; width: 1%; }
 
 .desp-line {
     padding: 0.2rem 0;
@@ -280,7 +286,6 @@ table { table-layout: auto; width: 100%; }
 
 /* Cell text wrap for long content */
 .cell-wrap {
-    max-width: 300px;
     white-space: normal;
     word-break: break-word;
     font-size: 0.75rem;
