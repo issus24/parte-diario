@@ -3,91 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#0f1117">
-    <title>Reporte Diario - Parte Diario</title>
+    <title>Reporte - Parte Diario</title>
     <link rel="stylesheet" href="/assets/css/styles.css">
     <style>
-        .reporte-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-        .reporte-title { font-size: 1.1rem; font-weight: 700; }
+        .rpt-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem; }
+        .rpt-title { font-size:1rem; font-weight:700; }
 
-        .seccion {
-            margin-bottom: 1.25rem;
+        .sec { margin-bottom:0.75rem; }
+        .sec-titulo {
+            font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em;
+            padding:0.3rem 0.5rem; background:var(--primary-light); color:var(--primary);
+            border:1px solid var(--border); border-bottom:none; border-radius:var(--radius) var(--radius) 0 0;
         }
-        .seccion-titulo {
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            padding: 0.5rem 0.75rem;
-            background: var(--primary-light);
-            color: var(--primary);
-            border-radius: var(--radius) var(--radius) 0 0;
-            border: 1px solid var(--border);
-            border-bottom: none;
-        }
-        .seccion-tabla {
-            border: 1px solid var(--border);
-            border-radius: 0 0 var(--radius) var(--radius);
-            overflow: hidden;
-        }
-        .seccion-tabla table { margin: 0; }
-        .seccion-tabla table th {
-            background: var(--bg-card-hover);
-            font-size: 0.65rem;
-            padding: 0.35rem 0.5rem;
-        }
-        .seccion-tabla table td {
-            font-size: 0.75rem;
-            padding: 0.35rem 0.5rem;
-            vertical-align: top;
-        }
-        .seccion-tabla table td.dominio-cell {
-            font-family: monospace;
-            font-weight: 700;
-            white-space: nowrap;
-        }
-        .seccion-tabla table td.fecha-cell {
-            white-space: nowrap;
-            color: var(--text-muted);
-            font-size: 0.7rem;
-        }
-        .seccion-tabla table td.obs-cell {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            max-width: 300px;
-        }
-        .seccion-empty {
-            padding: 0.75rem;
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 0.75rem;
-        }
+        .sec-body { border:1px solid var(--border); border-radius:0 0 var(--radius) var(--radius); overflow:hidden; }
+        .sec-body table { margin:0; }
+        .sec-body th { background:var(--bg-card-hover); font-size:0.55rem; padding:0.2rem 0.4rem; }
+        .sec-body td { font-size:0.7rem; padding:0.2rem 0.4rem; vertical-align:top; border-bottom:1px solid var(--border); }
+        .sec-body tr:last-child td { border-bottom:none; }
+        .sec-body .dom { font-family:monospace; font-weight:700; font-size:0.7rem; white-space:nowrap; }
+        .sec-body .fch { white-space:nowrap; color:var(--text-muted); font-size:0.65rem; }
+        .sec-body .obs { font-size:0.6rem; color:var(--text-muted); max-width:200px; }
+        .sec-empty { padding:0.4rem; text-align:center; color:var(--text-muted); font-size:0.65rem; }
 
-        /* Print */
+        /* Desperfectos inline compactos */
+        .d-row { display:flex; align-items:center; gap:2px; margin:1px 0; }
+        .d-row .badge { font-size:0.45rem; width:60px; justify-content:center; display:inline-flex; padding:1px 3px; }
+        .d-row .d-est { width:55px; }
+        .d-row .d-txt { font-size:0.65rem; }
+
         @media print {
-            body { background: #fff; color: #000; font-size: 10px; }
-            .navbar, .no-print { display: none !important; }
-            .container { padding: 0; }
-            .seccion-titulo { background: #e8f5e9; color: #1b5e20; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .seccion-tabla table th { background: #f5f5f5; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .seccion-tabla { border-color: #ccc; }
-            table td, table th { border-bottom-color: #ddd; }
-            .badge { border: 1px solid #ccc; font-size: 0.55rem; }
-            .stats-grid { grid-template-columns: repeat(4, 1fr); }
-            .stat-card { border-color: #ccc; background: #f9f9f9; }
-            .stat-card .stat-value { color: #000; }
-            .print-header { display: block !important; margin-bottom: 10px; }
-            .print-header h2 { font-size: 14px; margin: 0; }
-            .print-header p { font-size: 11px; color: #666; margin: 2px 0 0; }
+            body { background:#fff; color:#000; font-size:9px; }
+            .navbar, .no-print { display:none !important; }
+            .container { padding:0.25rem; }
+            .sec-titulo { background:#e8f5e9; color:#1b5e20; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+            .sec-body th { background:#f5f5f5; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+            .sec-body { border-color:#bbb; }
+            td, th { border-bottom-color:#ddd; }
+            .badge { border:1px solid #aaa; }
+            .p-hdr { display:block !important; margin-bottom:6px; }
+            .p-hdr h2 { font-size:12px; margin:0; }
+            .p-hdr p { font-size:9px; color:#666; margin:1px 0 0; }
         }
-        .print-header { display: none; }
+        .p-hdr { display:none; }
     </style>
 </head>
 <body>
@@ -102,159 +59,87 @@
     </nav>
 
     <div class="container">
-        <div class="print-header">
-            <h2>Parte Diario - Logiteck</h2>
-            <p id="print-fecha-texto"></p>
-        </div>
+        <div class="p-hdr"><h2>Parte Diario - Logiteck</h2><p id="p-fecha"></p></div>
 
-        <div class="reporte-header no-print">
-            <div class="reporte-title">Reporte Parte Diario</div>
-            <div style="display:flex; gap:0.5rem; align-items:center;">
-                <input type="date" class="form-control" id="inp-fecha" style="width:160px;">
-                <button class="btn btn-primary" onclick="cargarReporte()">Generar</button>
-                <button class="btn btn-outline" onclick="window.print()">&#128424; Imprimir</button>
+        <div class="rpt-header no-print">
+            <div class="rpt-title">Reporte Parte Diario</div>
+            <div style="display:flex;gap:0.4rem;align-items:center;">
+                <input type="date" class="form-control" id="inp-fecha" style="width:145px;padding:0.3rem 0.5rem;font-size:0.8rem;">
+                <button class="btn btn-primary btn-sm" onclick="cargarReporte()">Generar</button>
+                <button class="btn btn-outline btn-sm" onclick="window.print()">&#128424;</button>
             </div>
         </div>
 
-        <div id="reporte-content">
-            <div style="text-align:center; padding:2rem; color:var(--text-muted);">Cargando...</div>
-        </div>
+        <div id="rpt"></div>
     </div>
 
     <script type="module">
         const inp = document.getElementById('inp-fecha');
         inp.value = new Date().toISOString().split('T')[0];
-
         window.cargarReporte = cargarReporte;
         cargarReporte();
 
         async function cargarReporte() {
             const fecha = inp.value;
             if (!fecha) return;
-
-            document.getElementById('print-fecha-texto').textContent = formatFechaLarga(fecha);
-
+            document.getElementById('p-fecha').textContent = fmtLarga(fecha);
             try {
-                // Cargar todos los partes con detalle
-                const res = await fetch('/api/partes');
-                if (!res.ok) throw new Error('Error');
-                const partes = await res.json();
-
-                // Cargar detalle de cada uno para tener desperfectos
-                const detallados = await Promise.all(partes.map(async p => {
-                    try {
-                        const r = await fetch(`/api/partes/${p.id}`);
-                        return await r.json();
-                    } catch { return p; }
-                }));
-
-                renderReporte(detallados, fecha);
-            } catch (err) {
-                document.getElementById('reporte-content').innerHTML =
-                    '<div style="text-align:center;padding:2rem;color:var(--text-muted);">Error al cargar</div>';
-            }
+                const partes = await fetch('/api/partes').then(r => r.json());
+                const det = await Promise.all(partes.map(p => fetch(`/api/partes/${p.id}`).then(r => r.json()).catch(() => p)));
+                render(det);
+            } catch { document.getElementById('rpt').innerHTML = '<div class="sec-empty">Error</div>'; }
         }
 
-        function renderReporte(partes, fecha) {
-            const container = document.getElementById('reporte-content');
+        function render(partes) {
+            const ext = partes.filter(p => p.tipo_taller === 'EXTERNO' && p.estado !== 'Operativo' && p.ingreso_confirmado);
+            const int_ = partes.filter(p => p.tipo_taller === 'INTERNO' && p.estado !== 'Operativo' && p.ingreso_confirmado);
+            const pend = partes.filter(p => !p.ingreso_confirmado && p.estado !== 'Operativo');
+            const ops = partes.filter(p => p.estado === 'Operativo');
 
-            // Agrupar
-            const externos = partes.filter(p => p.tipo_taller === 'EXTERNO' && p.estado !== 'Operativo' && p.ingreso_confirmado);
-            const internos = partes.filter(p => p.tipo_taller === 'INTERNO' && p.estado !== 'Operativo' && p.ingreso_confirmado);
-            const pendientes = partes.filter(p => !p.ingreso_confirmado && p.estado !== 'Operativo');
-            const operativos = partes.filter(p => p.estado === 'Operativo');
-
-            let html = '';
-
-            // Talleres Externos
-            html += renderSeccion('TALLERES EXTERNOS', externos, true);
-
-            // Talleres Internos
-            html += renderSeccion('TALLERES INTERNOS', internos, true);
-
-            // Pendientes de ingreso
-            html += renderSeccion('PENDIENTES DE INGRESO', pendientes, false);
-
-            // Reparaciones finalizadas
-            html += renderSeccion('REPARACIONES FINALIZADAS', operativos, false);
-
-            container.innerHTML = html;
+            document.getElementById('rpt').innerHTML =
+                sec('TALLERES EXTERNOS', ext, true) +
+                sec('TALLERES INTERNOS', int_, true) +
+                sec('PENDIENTES DE INGRESO', pend, false) +
+                sec('REPARACIONES FINALIZADAS', ops, false);
         }
 
-        function renderSeccion(titulo, partes, mostrarObs) {
-            let rows = '';
+        function sec(titulo, partes, conObs) {
+            const cols = conObs ? 6 : 5;
+            let rows;
             if (partes.length === 0) {
-                rows = `<tr><td colspan="${mostrarObs ? 6 : 5}" class="seccion-empty">Sin unidades</td></tr>`;
+                rows = `<tr><td colspan="${cols}" class="sec-empty">-</td></tr>`;
             } else {
-                rows = partes.map((p, i) => {
-                    const fechaIng = p.fecha_ingreso ? formatFechaCorta(p.fecha_ingreso) : '-';
-                    const taller = p.tipo_taller === 'EXTERNO' && p.taller_externo
-                        ? p.taller_externo : (p.taller_box || '-');
-
-                    // Novedad compacta: desperfectos en una línea
-                    let novedad = '';
-                    if (p.desperfectos && p.desperfectos.length > 0) {
-                        novedad = p.desperfectos.map(d => {
-                            const sColor = sectorColor(d.sector);
-                            const dColor = estadoColor(d.estado);
-                            return `<div style="display:flex;align-items:center;gap:3px;margin:1px 0;">
-                                <span class="badge badge-${sColor}" style="font-size:0.5rem;width:70px;justify-content:center;display:inline-flex;">${d.sector}</span>
-                                <span class="badge badge-${dColor}" style="font-size:0.5rem;width:65px;justify-content:center;display:inline-flex;">${d.estado}</span>
-                                <span style="font-size:0.7rem;">${d.descripcion}</span>
-                            </div>`;
-                        }).join('');
-                    } else {
-                        novedad = `<span style="font-size:0.7rem;">${p.novedad || '-'}</span>`;
-                    }
-
-                    const estadoBadge = estadoColor(p.estado);
-                    const obs = p.observaciones || '';
-
+                rows = partes.map(p => {
+                    const fi = p.fecha_ingreso ? fmtCorta(p.fecha_ingreso) : '-';
+                    const tl = p.tipo_taller === 'EXTERNO' && p.taller_externo ? p.taller_externo : (p.taller_box || '-');
+                    const nov = p.desperfectos && p.desperfectos.length > 0
+                        ? p.desperfectos.map(d =>
+                            `<div class="d-row"><span class="badge badge-${sc(d.sector)}">${d.sector}</span><span class="badge badge-${ec(d.estado)} d-est">${d.estado}</span><span class="d-txt">${d.descripcion}</span></div>`
+                        ).join('')
+                        : `<span class="d-txt">${p.novedad || '-'}</span>`;
                     return `<tr>
-                        <td class="fecha-cell">${fechaIng}</td>
-                        <td class="dominio-cell">${p.dominio}</td>
-                        <td>${novedad}</td>
-                        <td>${taller}</td>
-                        <td><span class="badge badge-${estadoBadge}" style="font-size:0.55rem;">${p.estado}</span></td>
-                        ${mostrarObs ? `<td class="obs-cell">${obs}</td>` : ''}
+                        <td class="fch">${fi}</td>
+                        <td class="dom">${p.dominio}</td>
+                        <td>${nov}</td>
+                        <td style="font-size:0.65rem;">${tl}</td>
+                        <td><span class="badge badge-${ec(p.estado)}" style="font-size:0.5rem;">${p.estado}</span></td>
+                        ${conObs ? `<td class="obs">${p.observaciones || ''}</td>` : ''}
                     </tr>`;
                 }).join('');
             }
-
-            return `<div class="seccion">
-                <div class="seccion-titulo">${titulo} (${partes.length})</div>
-                <div class="seccion-tabla">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>INGRESO</th>
-                                <th>DOMINIO</th>
-                                <th>NOVEDAD</th>
-                                <th>TALLER</th>
-                                <th>ESTADO</th>
-                                ${mostrarObs ? '<th>OBSERVACIONES</th>' : ''}
-                            </tr>
-                        </thead>
-                        <tbody>${rows}</tbody>
-                    </table>
-                </div>
+            return `<div class="sec">
+                <div class="sec-titulo">${titulo} (${partes.length})</div>
+                <div class="sec-body"><table><thead><tr>
+                    <th>INGRESO</th><th>DOMINIO</th><th>NOVEDAD</th><th>TALLER</th><th>ESTADO</th>
+                    ${conObs ? '<th>OBS.</th>' : ''}
+                </tr></thead><tbody>${rows}</tbody></table></div>
             </div>`;
         }
 
-        function sectorColor(s) {
-            return { 'MECANICA': 'info', 'ELECTRICIDAD': 'warning', 'HERRERIA': 'muted', 'GOMERIA': 'success', 'LAVADERO': 'primary' }[(s||'').toUpperCase()] || 'muted';
-        }
-        function estadoColor(e) {
-            return { 'Pendiente': 'warning', 'Pendiente de Ingreso': 'muted', 'En Proceso': 'info', 'En Espera': 'orange', 'Reparado': 'success', 'Operativo': 'success', 'No Aplica': 'muted' }[e] || 'muted';
-        }
-        function formatFechaCorta(d) {
-            return new Date(d + 'T12:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
-        }
-        function formatFechaLarga(d) {
-            const dt = new Date(d + 'T12:00:00');
-            let t = dt.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-            return t.charAt(0).toUpperCase() + t.slice(1);
-        }
+        function sc(s) { return { 'MECANICA':'info','ELECTRICIDAD':'warning','HERRERIA':'muted','GOMERIA':'success','LAVADERO':'primary' }[(s||'').toUpperCase()] || 'muted'; }
+        function ec(e) { return { 'Pendiente':'warning','Pendiente de Ingreso':'muted','En Proceso':'info','En Espera':'orange','Reparado':'success','Operativo':'success','No Aplica':'muted' }[e] || 'muted'; }
+        function fmtCorta(d) { return new Date(d+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}); }
+        function fmtLarga(d) { const t=new Date(d+'T12:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}); return t.charAt(0).toUpperCase()+t.slice(1); }
     </script>
 </body>
 </html>
