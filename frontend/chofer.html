@@ -7,364 +7,192 @@
     <meta name="mobile-web-app-capable" content="yes">
     <title>Chofer - Parte Diario</title>
     <link rel="manifest" href="/manifest-chofer.json">
-    <link rel="stylesheet" href="/assets/css/styles.css">
     <style>
-        .chofer-container {
-            max-width: 500px;
-            margin: 0 auto;
-            padding: 1rem;
+        :root {
+            --bg: #0f1117; --card: #1a1d27; --card2: #222531;
+            --border: #2a2d3a; --primary: #22c55e; --primary-light: rgba(34,197,94,0.12);
+            --danger: #ef4444; --danger-light: rgba(239,68,68,0.12);
+            --text: #e2e8f0; --text2: #94a3b8; --text3: #64748b;
+            --info: #3b82f6; --warning: #f59e0b; --orange: #f97316;
         }
-        .chofer-header {
-            text-align: center;
-            padding: 1rem 0;
-        }
-        .chofer-header h2 { font-size: 1.1rem; margin-top: 0.5rem; }
-        .chofer-header p { font-size: 0.8rem; color: var(--text-muted); }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
 
-        .form-section { margin-bottom: 1.25rem; }
-        .form-section label {
-            display: block;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin-bottom: 0.35rem;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-        }
+        /* Nav */
+        .nav { background:var(--card); padding:0 1rem; height:52px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); }
+        .nav-brand { font-size:0.95rem; font-weight:700; display:flex; align-items:center; gap:0.4rem; }
+        .nav-badge { font-size:0.55rem; background:var(--primary-light); color:var(--primary); padding:2px 8px; border-radius:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; }
 
-        .form-control-lg {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 1rem;
-            color: var(--text);
-            background: var(--bg-input);
-        }
-        .form-control-lg:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-light); }
-        .form-control-lg::placeholder { color: var(--text-muted); }
-        textarea.form-control-lg { resize: vertical; min-height: 80px; font-family: inherit; }
+        /* Container */
+        .app { max-width:460px; margin:0 auto; padding:1.25rem 1rem 2rem; }
 
-        /* Media section */
-        .media-section { margin-bottom: 1.25rem; }
-        .media-label { font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 0.5rem; }
+        /* Input group */
+        .field { margin-bottom:1rem; }
+        .field-label { font-size:0.65rem; font-weight:600; color:var(--text3); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.35rem; }
+        .field-row { display:flex; gap:0.5rem; }
+        .field-row .field { flex:1; margin-bottom:0; }
 
-        .media-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0.5rem;
-            margin-bottom: 0.5rem;
+        .input {
+            width:100%; padding:0.7rem 0.85rem; border:1px solid var(--border); border-radius:10px;
+            font-size:0.95rem; color:var(--text); background:var(--card); font-family:inherit;
+            transition: border-color 0.15s;
         }
+        .input:focus { outline:none; border-color:var(--primary); }
+        .input::placeholder { color:var(--text3); }
+        .input-lg { font-size:1.15rem; font-weight:600; padding:0.85rem; text-transform:uppercase; letter-spacing:0.05em; text-align:center; font-family:monospace; }
+        textarea.input { resize:none; min-height:70px; }
 
-        .media-thumb {
-            position: relative;
-            aspect-ratio: 1;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid var(--border);
-        }
-        .media-thumb img { width: 100%; height: 100%; object-fit: cover; }
-        .media-thumb .remove-btn {
-            position: absolute;
-            top: 4px;
-            right: 4px;
-            width: 22px;
-            height: 22px;
-            border-radius: 50%;
-            background: rgba(0,0,0,0.7);
-            color: #fff;
-            border: none;
-            font-size: 0.7rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        /* Problemas */
+        .prob-list { margin-bottom:0.75rem; }
+        .prob-empty { text-align:center; padding:0.75rem; color:var(--text3); font-size:0.8rem; }
 
-        .media-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            width: 100%;
-            padding: 0.75rem;
-            border: 2px dashed var(--border);
-            border-radius: 8px;
-            background: transparent;
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.15s;
+        .prob-item {
+            display:flex; align-items:center; gap:0.5rem;
+            background:var(--card); border:1px solid var(--border); border-radius:10px;
+            padding:0.6rem 0.75rem; margin-bottom:0.35rem;
         }
-        .media-btn:hover { border-color: var(--primary); color: var(--primary); }
-        .media-btn .icon { font-size: 1.2rem; }
+        .prob-badge { font-size:0.55rem; font-weight:700; padding:3px 8px; border-radius:6px; text-transform:uppercase; white-space:nowrap; }
+        .prob-badge.mec { background:rgba(59,130,246,0.15); color:#60a5fa; }
+        .prob-badge.ele { background:rgba(245,158,11,0.15); color:#fbbf24; }
+        .prob-badge.her { background:rgba(107,114,128,0.15); color:#9ca3af; }
+        .prob-badge.gom { background:rgba(34,197,94,0.15); color:#4ade80; }
+        .prob-badge.lav { background:rgba(6,182,212,0.15); color:#22d3ee; }
+        .prob-text { flex:1; font-size:0.85rem; }
+        .prob-del { background:none; border:none; color:var(--text3); font-size:1.1rem; cursor:pointer; padding:0 0.2rem; }
+        .prob-del:hover { color:var(--danger); }
 
-        /* Audio */
-        .audio-list { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.5rem; }
-        .audio-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 0.75rem;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
+        /* Input area for new problem */
+        .prob-input {
+            background:var(--card); border:1px solid var(--border); border-radius:12px;
+            padding:0.75rem; margin-bottom:0.75rem;
         }
-        .audio-item audio { flex: 1; height: 32px; }
-        .audio-item .remove-btn {
-            background: none;
-            border: none;
-            color: var(--danger);
-            cursor: pointer;
-            font-size: 1rem;
-        }
+        .prob-input textarea { margin-bottom:0.5rem; border-color:transparent; background:var(--card2); }
+        .prob-input textarea:focus { border-color:var(--primary); }
 
-        .rec-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            width: 100%;
-            padding: 0.75rem;
-            border: 2px dashed var(--border);
-            border-radius: 8px;
-            background: transparent;
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.15s;
+        /* Sector chips */
+        .chips { display:none; margin-bottom:0.5rem; }
+        .chips.show { display:flex; flex-wrap:wrap; gap:0.3rem; }
+        .chip {
+            padding:0.3rem 0.7rem; border-radius:16px; font-size:0.7rem; font-weight:600;
+            border:1.5px solid var(--border); background:transparent; color:var(--text3); cursor:pointer;
         }
-        .rec-btn:hover { border-color: var(--primary); color: var(--primary); }
-        .rec-btn.recording {
-            border-color: var(--danger);
-            color: var(--danger);
-            background: var(--danger-light);
-            animation: pulse 1.5s infinite;
+        .chip.active { background:var(--primary-light); border-color:var(--primary); color:var(--primary); }
+        .chip-conf { font-size:0.6rem; color:var(--text3); margin-top:0.2rem; }
+
+        .add-btn {
+            width:100%; padding:0.65rem; border:none; border-radius:10px;
+            background:var(--primary); color:#000; font-size:0.85rem; font-weight:700; cursor:pointer;
         }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .add-btn:disabled { opacity:0.4; }
+
+        /* Media */
+        .media-row { display:flex; gap:0.5rem; margin-bottom:1.25rem; }
+        .media-action {
+            flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.3rem;
+            padding:1rem 0.5rem; border:1px solid var(--border); border-radius:12px;
+            background:var(--card); color:var(--text2); font-size:0.75rem; cursor:pointer;
+            transition:border-color 0.15s;
+        }
+        .media-action:hover, .media-action:active { border-color:var(--primary); color:var(--primary); }
+        .media-action .ico { font-size:1.5rem; }
+        .media-action.rec-active { border-color:var(--danger); color:var(--danger); background:var(--danger-light); animation:pulse 1.5s infinite; }
+        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.6; } }
+
+        .media-count { font-size:0.6rem; background:var(--primary-light); color:var(--primary); padding:1px 6px; border-radius:8px; font-weight:700; }
+
+        /* Previews */
+        .preview-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:0.35rem; margin-bottom:0.75rem; }
+        .preview-thumb { position:relative; aspect-ratio:1; border-radius:8px; overflow:hidden; border:1px solid var(--border); }
+        .preview-thumb img { width:100%; height:100%; object-fit:cover; }
+        .preview-del { position:absolute; top:3px; right:3px; width:18px; height:18px; border-radius:50%; background:rgba(0,0,0,0.75); color:#fff; border:none; font-size:0.6rem; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+
+        .audio-items { margin-bottom:0.75rem; }
+        .audio-item { display:flex; align-items:center; gap:0.4rem; padding:0.4rem 0.6rem; background:var(--card); border:1px solid var(--border); border-radius:8px; margin-bottom:0.25rem; }
+        .audio-item audio { flex:1; height:28px; }
+        .audio-item .aud-del { background:none; border:none; color:var(--text3); cursor:pointer; font-size:0.9rem; }
 
         /* Submit */
         .submit-btn {
-            width: 100%;
-            padding: 1rem;
-            border: none;
-            border-radius: 10px;
-            background: var(--primary);
-            color: #000;
-            font-size: 1rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.15s;
+            width:100%; padding:1rem; border:none; border-radius:12px;
+            background:linear-gradient(135deg, #22c55e, #16a34a); color:#000;
+            font-size:1.05rem; font-weight:800; cursor:pointer; letter-spacing:0.02em;
+            box-shadow:0 4px 15px rgba(34,197,94,0.3);
         }
-        .submit-btn:hover { background: var(--primary-dark); }
-        .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .submit-btn:disabled { opacity:0.4; box-shadow:none; }
 
         /* Success */
-        .success-screen {
-            display: none;
-            text-align: center;
-            padding: 3rem 1rem;
-        }
-        .success-screen.active { display: block; }
-        .success-icon { font-size: 4rem; margin-bottom: 1rem; }
-        .success-screen h2 { color: var(--primary); margin-bottom: 0.5rem; }
-        .success-screen p { color: var(--text-muted); margin-bottom: 1.5rem; }
+        .success { display:none; text-align:center; padding:3rem 1rem; }
+        .success.show { display:block; }
+        .success-check { width:64px; height:64px; border-radius:50%; background:var(--primary-light); display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; font-size:2rem; }
+        .success h2 { color:var(--primary); font-size:1.1rem; margin-bottom:0.25rem; }
+        .success .nparte { font-size:0.85rem; color:var(--text2); margin-bottom:1.5rem; }
+        .success .again-btn { padding:0.75rem 2rem; border:1px solid var(--border); border-radius:10px; background:transparent; color:var(--text); font-size:0.9rem; cursor:pointer; }
 
-        #form-container.hidden { display: none; }
-
-        /* Hide file input */
-        .hidden-input { display: none; }
-
-        /* Categorizador */
-        .sector-suggestion {
-            display: none;
-            margin-bottom: 1.25rem;
-            padding: 0.75rem;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-        }
-        .sector-suggestion.active { display: block; }
-        .sector-suggestion .label {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-            margin-bottom: 0.5rem;
-        }
-        .sector-chips {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.4rem;
-        }
-        .sector-chip {
-            padding: 0.4rem 0.85rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            border: 1.5px solid var(--border);
-            background: transparent;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-        .sector-chip:hover { border-color: var(--primary); color: var(--text); }
-        .sector-chip.selected {
-            background: var(--primary-light);
-            border-color: var(--primary);
-            color: var(--primary);
-        }
-        .sector-confidence {
-            margin-top: 0.4rem;
-            font-size: 0.7rem;
-            color: var(--text-muted);
-        }
-
-        /* Problemas list */
-        .problemas-list { margin-bottom: 1rem; }
-        .problema-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 0.75rem;
-            margin-bottom: 0.5rem;
-            position: relative;
-        }
-        .problema-card .problema-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.3rem;
-        }
-        .problema-card .problema-num {
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            text-transform: uppercase;
-        }
-        .problema-card .problema-remove {
-            background: none;
-            border: none;
-            color: var(--danger);
-            cursor: pointer;
-            font-size: 1rem;
-            padding: 0 0.25rem;
-        }
-        .problema-card .problema-text {
-            font-size: 0.85rem;
-            color: var(--text);
-            margin-bottom: 0.3rem;
-        }
-        .problema-card .problema-sector {
-            font-size: 0.7rem;
-        }
-
-        .add-problema-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.4rem;
-            width: 100%;
-            padding: 0.6rem;
-            border: 2px dashed var(--primary);
-            border-radius: 8px;
-            background: var(--primary-light);
-            color: var(--primary);
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.15s;
-            margin-bottom: 1.25rem;
-        }
-        .add-problema-btn:hover { background: rgba(34,197,94,0.2); }
-
-        .problema-input-area {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 0.75rem;
-            margin-bottom: 0.75rem;
-        }
+        #form.hide { display:none; }
+        .hidden-input { display:none; }
     </style>
 </head>
 <body>
-    <nav class="navbar">
-        <h1>&#128668; Parte Diario</h1>
-        <span style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em;">Chofer</span>
-    </nav>
+    <div class="nav">
+        <div class="nav-brand">&#128668; Parte Diario</div>
+        <div class="nav-badge">Chofer</div>
+    </div>
 
-    <div class="chofer-container">
-        <div class="chofer-header">
-            <div style="font-size:2.5rem;">&#128666;</div>
-            <h2>Reportar Desperfecto</h2>
-            <p>Completa el formulario para generar un parte</p>
-        </div>
-
+    <div class="app">
         <!-- Form -->
-        <div id="form-container">
-            <div class="form-section">
-                <label>Dominio (Patente)</label>
-                <input type="text" class="form-control-lg" id="inp-dominio" placeholder="Ej: ABC 123" autocapitalize="characters">
+        <div id="form">
+            <div class="field">
+                <div class="field-label">Dominio (Patente)</div>
+                <input type="text" class="input input-lg" id="inp-dominio" placeholder="ABC 123" autocapitalize="characters">
             </div>
 
-            <div class="form-section">
-                <label>Tu Nombre</label>
-                <input type="text" class="form-control-lg" id="inp-nombre" placeholder="Nombre del chofer">
+            <div class="field">
+                <div class="field-label">Tu Nombre</div>
+                <input type="text" class="input" id="inp-nombre" placeholder="Nombre del chofer">
             </div>
 
-            <!-- Problemas agregados -->
-            <div class="form-section">
-                <label>Problemas reportados</label>
-                <div class="problemas-list" id="problemas-list"></div>
+            <!-- Problemas -->
+            <div class="field">
+                <div class="field-label">Problemas</div>
+                <div class="prob-list" id="prob-list"></div>
 
-                <!-- Input para agregar problema -->
-                <div class="problema-input-area">
-                    <textarea class="form-control-lg" id="inp-novedad" rows="2" placeholder="Describe el desperfecto..." style="margin-bottom:0.5rem;"></textarea>
-
-                    <!-- Sector sugerido -->
-                    <div class="sector-suggestion" id="sector-suggestion">
-                        <div class="label">Especialidad detectada</div>
-                        <div class="sector-chips" id="sector-chips"></div>
-                        <div class="sector-confidence" id="sector-confidence"></div>
-                    </div>
-
-                    <button type="button" class="add-problema-btn" onclick="agregarProblema()">
-                        + Agregar problema
-                    </button>
+                <div class="prob-input">
+                    <textarea class="input" id="inp-novedad" rows="2" placeholder="Describe el desperfecto..."></textarea>
+                    <div class="chips" id="chips"></div>
+                    <div class="chip-conf" id="chip-conf"></div>
+                    <button type="button" class="add-btn" id="add-btn" onclick="agregarProblema()" disabled>+ Agregar</button>
                 </div>
             </div>
 
-            <!-- Fotos -->
-            <div class="media-section">
-                <div class="media-label">Fotos</div>
-                <div class="media-grid" id="fotos-grid"></div>
-                <button type="button" class="media-btn" onclick="document.getElementById('foto-input').click()">
-                    <span class="icon">&#128247;</span> Tomar Foto
-                </button>
+            <!-- Media -->
+            <div class="field-label">Adjuntar</div>
+            <div class="media-row">
+                <div class="media-action" onclick="document.getElementById('foto-input').click()">
+                    <span class="ico">&#128247;</span>
+                    Foto
+                    <span class="media-count" id="foto-count" style="display:none;">0</span>
+                </div>
+                <div class="media-action" id="rec-btn" onclick="toggleGrabacion()">
+                    <span class="ico">&#127908;</span>
+                    <span id="rec-text">Audio</span>
+                    <span class="media-count" id="audio-count" style="display:none;">0</span>
+                </div>
                 <input type="file" accept="image/*" capture="environment" class="hidden-input" id="foto-input" onchange="agregarFoto(this)" multiple>
             </div>
 
-            <!-- Audio -->
-            <div class="media-section">
-                <div class="media-label">Notas de Voz</div>
-                <div class="audio-list" id="audio-list"></div>
-                <button type="button" class="rec-btn" id="rec-btn" onclick="toggleGrabacion()">
-                    <span class="icon">&#127908;</span> <span id="rec-text">Grabar Audio</span>
-                </button>
-            </div>
+            <div class="preview-grid" id="fotos-grid"></div>
+            <div class="audio-items" id="audio-list"></div>
 
-            <button type="button" class="submit-btn" id="submit-btn" onclick="enviarParte()">
-                Enviar Parte
-            </button>
+            <button type="button" class="submit-btn" id="submit-btn" onclick="enviarParte()">Enviar Parte</button>
         </div>
 
         <!-- Success -->
-        <div class="success-screen" id="success-screen">
-            <div class="success-icon">&#9989;</div>
+        <div class="success" id="success">
+            <div class="success-check">&#10003;</div>
             <h2>Parte Enviado</h2>
-            <p>N&#176; <strong id="success-nparte"></strong></p>
-            <p>Tu reporte fue recibido. Coordinacion lo revisara.</p>
-            <button class="submit-btn" onclick="resetForm()">Crear Otro Parte</button>
+            <div class="nparte" id="success-nparte"></div>
+            <p style="color:var(--text3); margin-bottom:1.5rem; font-size:0.85rem;">Coordinacion lo revisara</p>
+            <button class="again-btn" onclick="resetForm()">Crear otro parte</button>
         </div>
     </div>
 
@@ -373,218 +201,166 @@
 
         let sectorSeleccionado = null;
         let debounceTimer = null;
-        let problemas = []; // { texto, sector }
+        let problemas = [];
+        let fotos = [];
+        let audios = [];
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let grabando = false;
 
-        // --- CATEGORIZADOR ---
         const inputNovedad = document.getElementById('inp-novedad');
+        const addBtn = document.getElementById('add-btn');
+
+        // Enable/disable add button
         inputNovedad.addEventListener('input', () => {
+            addBtn.disabled = !inputNovedad.value.trim();
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => {
                 const texto = inputNovedad.value.trim();
-                if (texto.length < 5) {
-                    document.getElementById('sector-suggestion').classList.remove('active');
+                if (texto.length < 4) {
+                    document.getElementById('chips').classList.remove('show');
                     sectorSeleccionado = null;
                     return;
                 }
-
-                const resultado = categorizar(texto);
-                sectorSeleccionado = resultado.sector;
-                mostrarSugerencia(resultado);
+                const res = categorizar(texto);
+                sectorSeleccionado = res.sector;
+                mostrarChips(res);
             }, 400);
         });
 
-        // --- PROBLEMAS ---
-        window.agregarProblema = function() {
-            const texto = inputNovedad.value.trim();
-            if (!texto) return alert('Escribi una descripcion del problema');
+        function mostrarChips(res) {
+            const orden = [res.sector, ...res.alternativas, ...SECTORES.filter(s => s !== res.sector && !res.alternativas.includes(s))];
+            document.getElementById('chips').innerHTML = orden.map(s =>
+                `<button type="button" class="chip ${s === sectorSeleccionado ? 'active' : ''}" onclick="window.selSector('${s}')">${s}</button>`
+            ).join('');
+            document.getElementById('chips').classList.add('show');
+            document.getElementById('chip-conf').textContent = res.confianza > 0 ? `${res.confianza}% confianza` : '';
+        }
 
-            problemas.push({ texto, sector: sectorSeleccionado || 'MECANICA' });
+        window.selSector = function(s) {
+            sectorSeleccionado = s;
+            document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c.textContent === s));
+        };
+
+        // Problemas
+        window.agregarProblema = function() {
+            const t = inputNovedad.value.trim();
+            if (!t) return;
+            problemas.push({ texto: t, sector: sectorSeleccionado || 'MECANICA' });
             inputNovedad.value = '';
+            addBtn.disabled = true;
             sectorSeleccionado = null;
-            document.getElementById('sector-suggestion').classList.remove('active');
+            document.getElementById('chips').classList.remove('show');
+            document.getElementById('chip-conf').textContent = '';
             renderProblemas();
             inputNovedad.focus();
         };
 
-        window.quitarProblema = function(i) {
-            problemas.splice(i, 1);
-            renderProblemas();
-        };
+        window.quitarProblema = function(i) { problemas.splice(i, 1); renderProblemas(); };
+
+        function sectorBadgeClass(s) {
+            return { 'MECANICA':'mec','ELECTRICIDAD':'ele','HERRERIA':'her','GOMERIA':'gom','LAVADERO':'lav' }[(s||'').toUpperCase()] || 'mec';
+        }
 
         function renderProblemas() {
-            const container = document.getElementById('problemas-list');
+            const el = document.getElementById('prob-list');
             if (problemas.length === 0) {
-                container.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:0.5rem;">Sin problemas agregados</p>';
+                el.innerHTML = '<div class="prob-empty">Sin problemas agregados</div>';
                 return;
             }
-            container.innerHTML = problemas.map((p, i) => {
-                const sectorColor = p.sector === 'ELECTRICIDAD' ? 'warning'
-                    : p.sector === 'HERRERIA' ? 'muted'
-                    : p.sector === 'GOMERIA' ? 'success' : 'info';
-                return `
-                <div class="problema-card">
-                    <div class="problema-header">
-                        <span class="problema-num">Problema ${i + 1}</span>
-                        <button class="problema-remove" onclick="quitarProblema(${i})">&times;</button>
-                    </div>
-                    <div class="problema-text">${p.texto}</div>
-                    <span class="badge badge-${sectorColor}">${p.sector}</span>
-                </div>`;
-            }).join('');
+            el.innerHTML = problemas.map((p, i) =>
+                `<div class="prob-item">
+                    <span class="prob-badge ${sectorBadgeClass(p.sector)}">${p.sector}</span>
+                    <span class="prob-text">${p.texto}</span>
+                    <button class="prob-del" onclick="quitarProblema(${i})">&times;</button>
+                </div>`
+            ).join('');
         }
-
         renderProblemas();
 
-        function mostrarSugerencia(resultado) {
-            const container = document.getElementById('sector-suggestion');
-            const chipsEl = document.getElementById('sector-chips');
-            const confEl = document.getElementById('sector-confidence');
-
-            // Armar chips: primero el sugerido, luego alternativas, luego el resto
-            const orden = [resultado.sector, ...resultado.alternativas, ...SECTORES.filter(s =>
-                s !== resultado.sector && !resultado.alternativas.includes(s)
-            )];
-
-            chipsEl.innerHTML = orden.map(s => {
-                const selected = s === sectorSeleccionado ? 'selected' : '';
-                return `<button type="button" class="sector-chip ${selected}" onclick="window.seleccionarSector('${s}')">${s}</button>`;
-            }).join('');
-
-            if (resultado.confianza > 0) {
-                confEl.textContent = `${resultado.confianza}% de confianza`;
-            } else {
-                confEl.textContent = 'No se pudo determinar. Selecciona manualmente.';
-            }
-
-            container.classList.add('active');
-        }
-
-        window.seleccionarSector = function(sector) {
-            sectorSeleccionado = sector;
-            document.querySelectorAll('.sector-chip').forEach(chip => {
-                chip.classList.toggle('selected', chip.textContent === sector);
-            });
-        };
-
-        // --- FOTOS ---
-        let fotos = []; // array de Blobs
-
+        // Fotos
         window.agregarFoto = function(input) {
             for (const file of input.files) {
-                comprimirImagen(file).then(blob => {
-                    fotos.push(blob);
-                    renderFotos();
-                });
+                comprimirImagen(file).then(blob => { fotos.push(blob); renderFotos(); });
             }
             input.value = '';
-        }
+        };
 
         function comprimirImagen(file) {
             return new Promise(resolve => {
                 const img = new Image();
                 img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const maxW = 1200;
-                    const scale = Math.min(1, maxW / img.width);
-                    canvas.width = img.width * scale;
-                    canvas.height = img.height * scale;
-                    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-                    canvas.toBlob(resolve, 'image/jpeg', 0.7);
+                    const c = document.createElement('canvas');
+                    const s = Math.min(1, 1200 / img.width);
+                    c.width = img.width * s; c.height = img.height * s;
+                    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+                    c.toBlob(resolve, 'image/jpeg', 0.7);
                 };
                 img.src = URL.createObjectURL(file);
             });
         }
 
         function renderFotos() {
-            const grid = document.getElementById('fotos-grid');
-            grid.innerHTML = fotos.map((blob, i) => `
-                <div class="media-thumb">
-                    <img src="${URL.createObjectURL(blob)}">
-                    <button class="remove-btn" onclick="quitarFoto(${i})">&times;</button>
-                </div>
-            `).join('');
+            const el = document.getElementById('fotos-grid');
+            el.innerHTML = fotos.map((b, i) =>
+                `<div class="preview-thumb"><img src="${URL.createObjectURL(b)}"><button class="preview-del" onclick="quitarFoto(${i})">&times;</button></div>`
+            ).join('');
+            const cnt = document.getElementById('foto-count');
+            cnt.style.display = fotos.length ? 'inline' : 'none';
+            cnt.textContent = fotos.length;
         }
 
-        window.quitarFoto = function(i) {
-            fotos.splice(i, 1);
-            renderFotos();
-        }
+        window.quitarFoto = function(i) { fotos.splice(i, 1); renderFotos(); };
 
-        // --- AUDIO ---
-        let audios = []; // array of Blobs
-        let mediaRecorder = null;
-        let audioChunks = [];
-        let grabando = false;
-
-        window.toggleGrabacion = function() {
-            if (grabando) {
-                detenerGrabacion();
-            } else {
-                iniciarGrabacion();
-            }
-        }
+        // Audio
+        window.toggleGrabacion = function() { grabando ? detenerGrabacion() : iniciarGrabacion(); };
 
         async function iniciarGrabacion() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-                    ? 'audio/webm;codecs=opus' : 'audio/webm';
-                mediaRecorder = new MediaRecorder(stream, { mimeType });
+                const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
+                mediaRecorder = new MediaRecorder(stream, { mimeType: mime });
                 audioChunks = [];
-
                 mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
                 mediaRecorder.onstop = () => {
-                    const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
-                    audios.push(blob);
+                    audios.push(new Blob(audioChunks, { type: mediaRecorder.mimeType }));
                     renderAudios();
                     stream.getTracks().forEach(t => t.stop());
                 };
-
                 mediaRecorder.start();
                 grabando = true;
-                document.getElementById('rec-btn').classList.add('recording');
-                document.getElementById('rec-text').textContent = 'Detener Grabacion';
-            } catch (err) {
-                alert('No se pudo acceder al microfono');
-            }
+                document.getElementById('rec-btn').classList.add('rec-active');
+                document.getElementById('rec-text').textContent = 'Detener';
+            } catch { alert('No se pudo acceder al microfono'); }
         }
 
         function detenerGrabacion() {
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.stop();
-            }
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
             grabando = false;
-            document.getElementById('rec-btn').classList.remove('recording');
-            document.getElementById('rec-text').textContent = 'Grabar Audio';
+            document.getElementById('rec-btn').classList.remove('rec-active');
+            document.getElementById('rec-text').textContent = 'Audio';
         }
 
         function renderAudios() {
-            const list = document.getElementById('audio-list');
-            list.innerHTML = audios.map((blob, i) => `
-                <div class="audio-item">
-                    <audio controls src="${URL.createObjectURL(blob)}"></audio>
-                    <button class="remove-btn" onclick="quitarAudio(${i})">&times;</button>
-                </div>
-            `).join('');
+            const el = document.getElementById('audio-list');
+            el.innerHTML = audios.map((b, i) =>
+                `<div class="audio-item"><audio controls src="${URL.createObjectURL(b)}"></audio><button class="aud-del" onclick="quitarAudio(${i})">&times;</button></div>`
+            ).join('');
+            const cnt = document.getElementById('audio-count');
+            cnt.style.display = audios.length ? 'inline' : 'none';
+            cnt.textContent = audios.length;
         }
 
-        window.quitarAudio = function(i) {
-            audios.splice(i, 1);
-            renderAudios();
-        }
+        window.quitarAudio = function(i) { audios.splice(i, 1); renderAudios(); };
 
-        // --- ENVIAR ---
+        // Enviar
         window.enviarParte = async function() {
             const dominio = document.getElementById('inp-dominio').value.trim();
             const nombre = document.getElementById('inp-nombre').value.trim();
-            const novedad = document.getElementById('inp-novedad').value.trim();
+            const novedad = inputNovedad.value.trim();
 
-            // Si hay texto pendiente en el input, agregarlo como problema
-            if (novedad) {
-                problemas.push({ texto: novedad, sector: sectorSeleccionado || 'MECANICA' });
-            }
-
-            if (!dominio) return alert('Ingresa el dominio (patente)');
+            if (novedad) problemas.push({ texto: novedad, sector: sectorSeleccionado || 'MECANICA' });
+            if (!dominio) return alert('Ingresa el dominio');
             if (problemas.length === 0) return alert('Agrega al menos un problema');
 
             const btn = document.getElementById('submit-btn');
@@ -592,66 +368,47 @@
             btn.textContent = 'Enviando...';
 
             try {
-                const formData = new FormData();
-                // Novedad = resumen de todos los problemas
                 const novedadCompleta = problemas.map(p => p.texto).join('. ');
-                // Taller box = sector del primer problema (o el más frecuente)
                 const sectores = problemas.map(p => p.sector);
-                const sectorPrincipal = sectores.sort((a,b) =>
-                    sectores.filter(v => v===b).length - sectores.filter(v => v===a).length
-                )[0] || 'MECANICA';
+                const sectorPrincipal = sectores.sort((a,b) => sectores.filter(v => v===b).length - sectores.filter(v => v===a).length)[0] || 'MECANICA';
 
-                formData.append('dominio', dominio);
-                formData.append('chofer_nombre', nombre);
-                formData.append('novedad', novedadCompleta);
-                formData.append('taller_box', sectorPrincipal);
-                formData.append('problemas', JSON.stringify(problemas));
+                const fd = new FormData();
+                fd.append('dominio', dominio);
+                fd.append('chofer_nombre', nombre);
+                fd.append('novedad', novedadCompleta);
+                fd.append('taller_box', sectorPrincipal);
+                fd.append('problemas', JSON.stringify(problemas));
+                fotos.forEach((b, i) => fd.append('fotos', b, `foto_${i}.jpg`));
+                audios.forEach((b, i) => fd.append('audios', b, `audio_${i}.webm`));
 
-                fotos.forEach((blob, i) => {
-                    formData.append('fotos', blob, `foto_${i}.jpg`);
-                });
-                audios.forEach((blob, i) => {
-                    formData.append('audios', blob, `audio_${i}.webm`);
-                });
-
-                const res = await fetch('/api/partes/chofer', { method: 'POST', body: formData });
-                if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.detail || 'Error al enviar');
-                }
+                const res = await fetch('/api/partes/chofer', { method: 'POST', body: fd });
+                if (!res.ok) { const err = await res.json(); throw new Error(err.detail || 'Error'); }
 
                 const data = await res.json();
-                document.getElementById('success-nparte').textContent = data.n_parte;
-                document.getElementById('form-container').classList.add('hidden');
-                document.getElementById('success-screen').classList.add('active');
+                document.getElementById('success-nparte').textContent = `N° ${data.n_parte}`;
+                document.getElementById('form').classList.add('hide');
+                document.getElementById('success').classList.add('show');
             } catch (err) {
                 alert('Error: ' + err.message);
             } finally {
                 btn.disabled = false;
                 btn.textContent = 'Enviar Parte';
             }
-        }
+        };
 
         window.resetForm = function() {
             document.getElementById('inp-dominio').value = '';
             document.getElementById('inp-nombre').value = '';
-            document.getElementById('inp-novedad').value = '';
-            fotos = [];
-            audios = [];
-            renderFotos();
-            renderAudios();
-            problemas = [];
+            inputNovedad.value = '';
+            problemas = []; fotos = []; audios = [];
             sectorSeleccionado = null;
-            renderProblemas();
-            document.getElementById('sector-suggestion').classList.remove('active');
-            document.getElementById('form-container').classList.remove('hidden');
-            document.getElementById('success-screen').classList.remove('active');
-        }
+            renderProblemas(); renderFotos(); renderAudios();
+            document.getElementById('chips').classList.remove('show');
+            document.getElementById('form').classList.remove('hide');
+            document.getElementById('success').classList.remove('show');
+        };
 
-        // PWA: register service worker
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js').catch(() => {});
-        }
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
     </script>
 </body>
 </html>
