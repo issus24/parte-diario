@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from starlette.middleware.base import BaseHTTPMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from starlette.requests import Request
 import os
 
@@ -56,6 +57,7 @@ app.add_middleware(
 )
 
 app.add_middleware(NoCacheMiddleware)
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=["*"])
 
 # Routers API
 app.include_router(partes.router, prefix="/api")
