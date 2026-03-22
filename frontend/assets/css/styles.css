@@ -304,12 +304,11 @@ table { width: 100%; }
 .patente-placa {
     display: inline-flex;
     flex-direction: column;
-    border-radius: 4px;
+    border-radius: 3px;
     overflow: hidden;
     font-family: 'Arial Black', 'Impact', sans-serif;
     line-height: 1;
-    min-width: 110px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.4);
 }
 
 /* Mercosur (AB 123 CD) - fondo blanco, franja azul REPUBLICA ARGENTINA */
@@ -322,21 +321,21 @@ table { width: 100%; }
 .patente-placa.mercosur .placa-franja {
     background: linear-gradient(180deg, #2567b5, #1e56a0);
     color: #ffffff;
-    font-size: 0.4rem;
+    font-size: 0.35rem;
     text-align: center;
-    padding: 2px 0;
+    padding: 1px 0;
     font-weight: 700;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.08em;
     font-family: Arial, sans-serif;
 }
 
 .patente-placa.mercosur .placa-texto {
     color: #1a1a1a;
-    font-size: 0.95rem;
+    font-size: 0.8rem;
     font-weight: 900;
     text-align: center;
-    padding: 4px 8px 5px;
-    letter-spacing: 0.12em;
+    padding: 3px 6px 4px;
+    letter-spacing: 0.1em;
 }
 
 /* Vieja (ABC 123) - fondo negro, franja ARGENTINA */
@@ -349,21 +348,21 @@ table { width: 100%; }
 .patente-placa.vieja .placa-franja {
     background: #e8e8e8;
     color: #1a6bb5;
-    font-size: 0.4rem;
+    font-size: 0.35rem;
     text-align: center;
-    padding: 1.5px 0;
+    padding: 1px 0;
     font-weight: 700;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.08em;
     font-family: Arial, sans-serif;
 }
 
 .patente-placa.vieja .placa-texto {
     color: #ffffff;
-    font-size: 0.95rem;
+    font-size: 0.8rem;
     font-weight: 900;
     text-align: center;
-    padding: 4px 8px 5px;
-    letter-spacing: 0.15em;
+    padding: 3px 6px 4px;
+    letter-spacing: 0.12em;
 }
 
 /* --- MODAL --- */
