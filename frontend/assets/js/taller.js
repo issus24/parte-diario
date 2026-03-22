@@ -197,65 +197,33 @@ function renderTabletCards(datos) {
         const colorEstado = getColorEstado(p.estado);
         const tipoRepBadge = p.tipo_reparacion === 'PROFUNDA' ? 'danger'
             : p.tipo_reparacion === 'LENTA' ? 'warning' : 'info';
-        const fechaIngreso = p.fecha_ingreso ? formatFecha(p.fecha_ingreso) : 'Sin asignar';
-        const tallerDisplay = p.tipo_taller === 'EXTERNO' && p.taller_externo
-            ? p.taller_externo : (p.taller_box || '-');
 
         // Progreso
         let progreso = '';
         if (p._desperfectos && p._desperfectos.length > 0) {
             const total = p._desperfectos.length;
             const resueltos = p._desperfectos.filter(d => esResolutivo(d.estado)).length;
-            progreso = `${resueltos}/${total}`;
+            progreso = `<span class="text-muted" style="font-size:0.8rem;">${resueltos}/${total}</span>`;
         }
 
-        // Desperfectos con selects
-        let despHtml = '';
+        // Mini lista de problemas (solo texto corto)
+        let despMini = '';
         if (p._desperfectos && p._desperfectos.length > 0) {
-            despHtml = `<div class="tablet-card-desp">
-                ${p._desperfectos.map(d => {
-                    const sColor = sectorColor(d.sector);
-                    const opts = estadosDisponibles.map(e =>
-                        `<option value="${e.nombre}" ${e.nombre === d.estado ? 'selected' : ''}>${e.nombre}</option>`
-                    ).join('');
-                    return `<div class="tablet-desp-item">
-                        <div class="tablet-desp-info">
-                            <span class="badge badge-${sColor}">${d.sector}</span>
-                            <div style="margin-top:0.2rem;">${d.descripcion}</div>
-                        </div>
-                        <select onchange="cambiarEstadoDesp(${d.id}, this.value)">${opts}</select>
-                    </div>`;
-                }).join('')}
-            </div>`;
+            despMini = p._desperfectos.map(d => {
+                const sColor = sectorColor(d.sector);
+                const dColor = getColorEstado(d.estado);
+                return `<span class="badge badge-${sColor}">${d.sector}</span><span class="badge badge-${dColor}" style="margin-left:2px;margin-right:6px;">${d.estado}</span>`;
+            }).join('');
         }
 
-        return `<div class="tablet-card">
-            <div class="tablet-card-header">
-                <div>
-                    <span class="dominio">${p.dominio}</span>
-                    <span class="badge badge-${tipoRepBadge}" style="margin-left:0.5rem;">${p.tipo_reparacion}</span>
-                    <span class="badge badge-${colorEstado}" style="margin-left:0.25rem;">${p.estado}</span>
-                    ${progreso ? `<span style="font-size:0.75rem; color:var(--text-muted); margin-left:0.5rem;">${progreso}</span>` : ''}
-                </div>
-                <div class="meta">
-                    ${fechaIngreso}<br>${p.n_parte}
-                </div>
+        return `<div class="tablet-card-compact" onclick="abrirEditar(${p.id})">
+            <div class="tcc-left">
+                <span class="tcc-dominio">${p.dominio}</span>
+                <span class="badge badge-${tipoRepBadge}">${p.tipo_reparacion}</span>
+                <span class="badge badge-${colorEstado}">${p.estado}</span>
+                ${progreso}
             </div>
-            <div class="tablet-card-body">
-                <div class="tablet-card-row">
-                    <span class="label">Taller</span>
-                    <span>${tallerDisplay}</span>
-                </div>
-                ${p.observaciones ? `<div class="tablet-card-row">
-                    <span class="label">Obs.</span>
-                    <span style="color:var(--text-secondary);">${p.observaciones}</span>
-                </div>` : ''}
-            </div>
-            ${despHtml}
-            <div class="tablet-card-footer">
-                <button class="btn btn-outline" onclick="abrirEditar(${p.id})">&#9998; Editar</button>
-                <button class="btn btn-outline" onclick="editarObsTablet(${p.id})">&#128221; Observaciones</button>
-            </div>
+            <div class="tcc-badges">${despMini}</div>
         </div>`;
     }).join('');
 }
