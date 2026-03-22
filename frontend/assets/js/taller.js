@@ -338,6 +338,24 @@ window.guardarEdicion = async function() {
     }
 };
 
+// --- TODO REPARADO ---
+window.todoReparado = async function() {
+    if (!parteEditando || !parteEditando._desperfectos) return;
+
+    const pendientes = parteEditando._desperfectos.filter(d => !esResolutivo(d.estado));
+    if (pendientes.length === 0) return alert('Ya están todos reparados');
+
+    try {
+        for (const d of pendientes) {
+            await actualizarEstadoDesperfecto(d.id, 'Reparado');
+        }
+        cerrarModal('modal-editar');
+        await cargarDatos();
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
+};
+
 // --- UTILS ---
 window.cerrarModal = function(id) {
     document.getElementById(id).classList.remove('active');
