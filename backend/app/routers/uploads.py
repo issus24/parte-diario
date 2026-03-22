@@ -39,6 +39,7 @@ def crear_parte_chofer(
     dominio: str = Form(...),
     novedad: str = Form(...),
     chofer_nombre: str = Form(""),
+    taller_box: str = Form(""),
     fotos: List[UploadFile] = File(default=[]),
     audios: List[UploadFile] = File(default=[]),
     db: Session = Depends(get_db)
@@ -56,6 +57,7 @@ def crear_parte_chofer(
         dominio=dominio.strip().upper(),
         chofer_nombre=chofer_nombre.strip() or None,
         novedad=novedad.strip(),
+        taller_box=taller_box.strip().upper() if taller_box.strip() else None,
         operacion="BASE TT",
         tipo_reparacion="RAPIDA",
         tipo_taller="INTERNO",

@@ -175,6 +175,51 @@
 
         /* Hide file input */
         .hidden-input { display: none; }
+
+        /* Categorizador */
+        .sector-suggestion {
+            display: none;
+            margin-bottom: 1.25rem;
+            padding: 0.75rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        .sector-suggestion.active { display: block; }
+        .sector-suggestion .label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            margin-bottom: 0.5rem;
+        }
+        .sector-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+        .sector-chip {
+            padding: 0.4rem 0.85rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: 1.5px solid var(--border);
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .sector-chip:hover { border-color: var(--primary); color: var(--text); }
+        .sector-chip.selected {
+            background: var(--primary-light);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        .sector-confidence {
+            margin-top: 0.4rem;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
     </style>
 </head>
 <body>
@@ -205,6 +250,13 @@
             <div class="form-section">
                 <label>Descripcion del problema</label>
                 <textarea class="form-control-lg" id="inp-novedad" rows="3" placeholder="Describe el desperfecto o problema..."></textarea>
+            </div>
+
+            <!-- Sector sugerido -->
+            <div class="sector-suggestion" id="sector-suggestion">
+                <div class="label">Especialidad detectada</div>
+                <div class="sector-chips" id="sector-chips"></div>
+                <div class="sector-confidence" id="sector-confidence"></div>
             </div>
 
             <!-- Fotos -->
@@ -241,11 +293,65 @@
         </div>
     </div>
 
-    <script>
+    <script type="module">
+        import { categorizar, SECTORES } from '/assets/js/categorizador.js';
+
+        let sectorSeleccionado = null;
+        let debounceTimer = null;
+
+        // --- CATEGORIZADOR ---
+        const inputNovedad = document.getElementById('inp-novedad');
+        inputNovedad.addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                const texto = inputNovedad.value.trim();
+                if (texto.length < 5) {
+                    document.getElementById('sector-suggestion').classList.remove('active');
+                    sectorSeleccionado = null;
+                    return;
+                }
+
+                const resultado = categorizar(texto);
+                sectorSeleccionado = resultado.sector;
+                mostrarSugerencia(resultado);
+            }, 400);
+        });
+
+        function mostrarSugerencia(resultado) {
+            const container = document.getElementById('sector-suggestion');
+            const chipsEl = document.getElementById('sector-chips');
+            const confEl = document.getElementById('sector-confidence');
+
+            // Armar chips: primero el sugerido, luego alternativas, luego el resto
+            const orden = [resultado.sector, ...resultado.alternativas, ...SECTORES.filter(s =>
+                s !== resultado.sector && !resultado.alternativas.includes(s)
+            )];
+
+            chipsEl.innerHTML = orden.map(s => {
+                const selected = s === sectorSeleccionado ? 'selected' : '';
+                return `<button type="button" class="sector-chip ${selected}" onclick="window.seleccionarSector('${s}')">${s}</button>`;
+            }).join('');
+
+            if (resultado.confianza > 0) {
+                confEl.textContent = `${resultado.confianza}% de confianza`;
+            } else {
+                confEl.textContent = 'No se pudo determinar. Selecciona manualmente.';
+            }
+
+            container.classList.add('active');
+        }
+
+        window.seleccionarSector = function(sector) {
+            sectorSeleccionado = sector;
+            document.querySelectorAll('.sector-chip').forEach(chip => {
+                chip.classList.toggle('selected', chip.textContent === sector);
+            });
+        };
+
         // --- FOTOS ---
         let fotos = []; // array de Blobs
 
-        function agregarFoto(input) {
+        window.agregarFoto = function(input) {
             for (const file of input.files) {
                 comprimirImagen(file).then(blob => {
                     fotos.push(blob);
@@ -281,7 +387,7 @@
             `).join('');
         }
 
-        function quitarFoto(i) {
+        window.quitarFoto = function(i) {
             fotos.splice(i, 1);
             renderFotos();
         }
@@ -292,7 +398,7 @@
         let audioChunks = [];
         let grabando = false;
 
-        function toggleGrabacion() {
+        window.toggleGrabacion = function() {
             if (grabando) {
                 detenerGrabacion();
             } else {
@@ -344,13 +450,13 @@
             `).join('');
         }
 
-        function quitarAudio(i) {
+        window.quitarAudio = function(i) {
             audios.splice(i, 1);
             renderAudios();
         }
 
         // --- ENVIAR ---
-        async function enviarParte() {
+        window.enviarParte = async function() {
             const dominio = document.getElementById('inp-dominio').value.trim();
             const nombre = document.getElementById('inp-nombre').value.trim();
             const novedad = document.getElementById('inp-novedad').value.trim();
@@ -367,6 +473,9 @@
                 formData.append('dominio', dominio);
                 formData.append('chofer_nombre', nombre);
                 formData.append('novedad', novedad);
+                if (sectorSeleccionado) {
+                    formData.append('taller_box', sectorSeleccionado);
+                }
 
                 fotos.forEach((blob, i) => {
                     formData.append('fotos', blob, `foto_${i}.jpg`);
@@ -393,7 +502,7 @@
             }
         }
 
-        function resetForm() {
+        window.resetForm = function() {
             document.getElementById('inp-dominio').value = '';
             document.getElementById('inp-nombre').value = '';
             document.getElementById('inp-novedad').value = '';
@@ -401,6 +510,8 @@
             audios = [];
             renderFotos();
             renderAudios();
+            sectorSeleccionado = null;
+            document.getElementById('sector-suggestion').classList.remove('active');
             document.getElementById('form-container').classList.remove('hidden');
             document.getElementById('success-screen').classList.remove('active');
         }
