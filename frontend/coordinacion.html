@@ -37,56 +37,82 @@
             </div>
         </div>
 
-        <!-- Header + acciones -->
+        <!-- Header -->
         <div class="page-header">
-            <h2 class="page-title">Unidades en taller</h2>
-            <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
-                <input type="text" class="form-control" id="filtro-dominio" placeholder="Buscar dominio..." style="width:180px;">
-                <select class="form-control" id="filtro-tipo-taller" style="width:140px;">
-                    <option value="">Todos</option>
-                    <option value="INTERNO">Internos</option>
-                    <option value="EXTERNO">Externos</option>
-                </select>
-                <select class="form-control" id="filtro-estado" style="width:140px;">
-                    <option value="">Todos los estados</option>
-                    <option value="Pendiente">Pendiente</option>
-                    <option value="En Proceso">En Proceso</option>
-                    <option value="En Espera">En Espera</option>
-                    <option value="Operativo">Operativo</option>
-                </select>
-                <button class="btn btn-primary" onclick="abrirModalNuevo()">+ Nueva Unidad</button>
-            </div>
+            <h2 class="page-title">Parte Diario</h2>
+            <button class="btn btn-primary" onclick="abrirModalNuevo()">+ Nueva Unidad</button>
         </div>
 
-        <!-- Tabs interno/externo -->
+        <!-- Tabs -->
         <div class="tabs" style="margin-bottom:1rem;">
-            <button class="tab-btn active" data-tab="todos" onclick="cambiarTab('todos')">Todos</button>
-            <button class="tab-btn" data-tab="internos" onclick="cambiarTab('internos')">Talleres Internos</button>
+            <button class="tab-btn active" data-tab="internos" onclick="cambiarTab('internos')">Talleres Internos</button>
             <button class="tab-btn" data-tab="externos" onclick="cambiarTab('externos')">Talleres Externos</button>
-            <button class="tab-btn" data-tab="operativos" onclick="cambiarTab('operativos')">Operativos</button>
+            <button class="tab-btn" data-tab="operativos" onclick="cambiarTab('operativos')">Operativo</button>
         </div>
 
-        <!-- Tabla de partes -->
+        <!-- Tabla -->
         <div class="card">
             <div class="table-wrapper">
-                <table>
+                <table id="tabla-principal">
                     <thead>
                         <tr>
-                            <th>N&#176;</th>
-                            <th>Dominio</th>
-                            <th>Novedad</th>
-                            <th>Taller/Box</th>
-                            <th>T. Rep.</th>
-                            <th>Ingreso</th>
-                            <th>Fin Est.</th>
-                            <th>Estado</th>
-                            <th>Accion</th>
+                            <th style="width:40px;">N&#176;</th>
+                            <th>FECHA DE INGRESO</th>
+                            <th>FECHA PROB. FIN</th>
+                            <th>DOMINIO</th>
+                            <th>OPERACI&#211;N</th>
+                            <th>T. DE REP.</th>
+                            <th style="min-width:250px;">NOVEDAD COMPLETA DE LA UNIDAD</th>
+                            <th>TALLER/BOX</th>
+                            <th>ESTADO</th>
+                            <th style="min-width:200px;">OBSERVACIONES</th>
+                            <th style="width:70px;">ACC.</th>
+                        </tr>
+                        <tr class="filter-row">
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td><input type="text" class="filter-input" id="filtro-dominio" placeholder="Filtrar..."></td>
+                            <td></td>
+                            <td>
+                                <select class="filter-input" id="filtro-tipo-rep">
+                                    <option value="">Todos</option>
+                                    <option value="RAPIDA">Rapida</option>
+                                    <option value="LENTA">Lenta</option>
+                                    <option value="PROFUNDA">Profunda</option>
+                                </select>
+                            </td>
+                            <td></td>
+                            <td>
+                                <select class="filter-input" id="filtro-taller">
+                                    <option value="">Todos</option>
+                                    <option value="MECANICA">Mecanica</option>
+                                    <option value="ELECTRICIDAD">Electricidad</option>
+                                    <option value="HERRERIA">Herreria</option>
+                                    <option value="CHAPA/PINTURA">Chapa/Pint.</option>
+                                    <option value="GOMERIA">Gomeria</option>
+                                </select>
+                            </td>
+                            <td>
+                                <select class="filter-input" id="filtro-estado">
+                                    <option value="">Todos</option>
+                                    <option value="Pendiente">Pendiente</option>
+                                    <option value="En Proceso">En Proceso</option>
+                                    <option value="En Espera">En Espera</option>
+                                    <option value="Operativo">Operativo</option>
+                                </select>
+                            </td>
+                            <td></td>
+                            <td></td>
                         </tr>
                     </thead>
                     <tbody id="tabla-partes">
-                        <tr><td colspan="9" class="loading-center"><div class="spinner"></div></td></tr>
+                        <tr><td colspan="11" class="loading-center"><div class="spinner"></div></td></tr>
                     </tbody>
                 </table>
+            </div>
+            <div class="table-footer">
+                <span id="tabla-count" class="text-muted">-</span>
             </div>
         </div>
     </div>
@@ -99,7 +125,7 @@
                 <button class="modal-close" onclick="cerrarModal('modal-nuevo')">&times;</button>
             </div>
             <div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
                     <div class="form-group">
                         <label>Dominio (Patente)</label>
                         <input type="text" class="form-control" id="nuevo-dominio" placeholder="ABC 123">
@@ -109,9 +135,9 @@
                         <input type="text" class="form-control" id="nuevo-operacion" value="BASE TT">
                     </div>
                 </div>
-                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem;">
+                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.75rem;">
                     <div class="form-group">
-                        <label>Tipo de Reparacion</label>
+                        <label>T. de Reparacion</label>
                         <select class="form-control" id="nuevo-tipo-rep">
                             <option value="RAPIDA">Rapida</option>
                             <option value="LENTA">Lenta</option>
@@ -140,7 +166,7 @@
                     <label>Nombre del Taller Externo</label>
                     <input type="text" class="form-control" id="nuevo-taller-externo" placeholder="Ej: IVECAM E.E.">
                 </div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
                     <div class="form-group">
                         <label>Fecha de Ingreso</label>
                         <input type="date" class="form-control" id="nuevo-fecha-ingreso">
@@ -166,7 +192,7 @@
         </div>
     </div>
 
-    <!-- Modal: Editar/Ver Parte -->
+    <!-- Modal: Editar -->
     <div class="modal-overlay" id="modal-editar">
         <div class="modal" style="max-width:700px;">
             <div class="modal-header">
@@ -174,10 +200,10 @@
                 <button class="modal-close" onclick="cerrarModal('modal-editar')">&times;</button>
             </div>
             <div>
-                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin-bottom:1rem;">
+                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.75rem; margin-bottom:0.75rem;">
                     <div>
                         <label class="form-label-sm">Dominio</label>
-                        <div id="edit-dominio" style="font-weight:700; font-family:monospace; font-size:1.1rem;"></div>
+                        <div id="edit-dominio" style="font-weight:700; font-family:monospace; font-size:1rem;"></div>
                     </div>
                     <div>
                         <label class="form-label-sm">Operacion</label>
@@ -188,13 +214,13 @@
                         <div id="edit-tipo-taller"></div>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>Estado</label>
-                    <select class="form-control" id="edit-estado"></select>
-                </div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.75rem;">
                     <div class="form-group">
-                        <label>Tipo de Reparacion</label>
+                        <label>Estado</label>
+                        <select class="form-control" id="edit-estado"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>T. de Reparacion</label>
                         <select class="form-control" id="edit-tipo-rep">
                             <option value="RAPIDA">Rapida</option>
                             <option value="LENTA">Lenta</option>
@@ -217,12 +243,12 @@
                     <input type="date" class="form-control" id="edit-fecha-fin">
                 </div>
                 <div class="form-group">
-                    <label>Novedad</label>
+                    <label>Novedad Completa</label>
                     <textarea class="form-control" id="edit-novedad" rows="3"></textarea>
                 </div>
                 <div class="form-group">
                     <label>Observaciones</label>
-                    <textarea class="form-control" id="edit-observaciones" rows="2"></textarea>
+                    <textarea class="form-control" id="edit-observaciones" rows="3"></textarea>
                 </div>
             </div>
             <div class="modal-footer">

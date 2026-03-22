@@ -235,6 +235,50 @@ table th {
 
 table tbody tr:hover { background: var(--bg-card-hover); }
 
+/* Filter row in table header */
+.filter-row td {
+    padding: 0.3rem 0.5rem;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.filter-input {
+    width: 100%;
+    padding: 0.25rem 0.4rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    background: var(--bg-input);
+}
+
+.filter-input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.filter-input::placeholder { color: var(--text-muted); font-size: 0.65rem; }
+
+/* Cell text wrap for long content */
+.cell-wrap {
+    max-width: 300px;
+    white-space: normal;
+    word-break: break-word;
+    font-size: 0.75rem;
+    line-height: 1.4;
+}
+
+/* Table footer */
+.table-footer {
+    padding: 0.5rem 0.75rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+/* Text muted utility */
+.text-muted { color: var(--text-muted); }
+
 /* --- MODAL --- */
 .modal-overlay {
     display: none;

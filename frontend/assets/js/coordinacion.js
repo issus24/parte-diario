@@ -3,7 +3,7 @@ import { getPartes, crearParte, actualizarParte, getEstados } from './api.js';
 let partes = [];
 let estadosDisponibles = [];
 let parteEditando = null;
-let tabActual = 'todos';
+let tabActual = 'internos';
 
 // --- INIT ---
 document.addEventListener('DOMContentLoaded', async () => {
@@ -13,11 +13,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('Error cargando estados:', err);
     }
 
-    // Fecha ingreso default = hoy
     document.getElementById('nuevo-fecha-ingreso').value = new Date().toISOString().split('T')[0];
-
     document.getElementById('filtro-dominio').addEventListener('input', renderTabla);
-    document.getElementById('filtro-tipo-taller').addEventListener('change', renderTabla);
+    document.getElementById('filtro-tipo-rep').addEventListener('change', renderTabla);
+    document.getElementById('filtro-taller').addEventListener('change', renderTabla);
     document.getElementById('filtro-estado').addEventListener('change', renderTabla);
 
     cargarPartes();
@@ -31,25 +30,21 @@ async function cargarPartes() {
     } catch (err) {
         console.error('Error cargando partes:', err);
         document.getElementById('tabla-partes').innerHTML =
-            '<tr><td colspan="9" class="empty-state"><p>Error al cargar datos</p></td></tr>';
+            '<tr><td colspan="11" class="empty-state"><p>Error al cargar datos</p></td></tr>';
     }
 }
 
 function actualizarStats() {
-    const pendientes = partes.filter(p => p.estado === 'Pendiente').length;
-    const enProceso = partes.filter(p => p.estado === 'En Proceso').length;
-    const enEspera = partes.filter(p => p.estado === 'En Espera' || p.estado === 'Esperando Repuesto').length;
-    const operativos = partes.filter(p => p.estado === 'Operativo').length;
-
-    document.getElementById('stat-pendientes').textContent = pendientes;
-    document.getElementById('stat-en-proceso').textContent = enProceso;
-    document.getElementById('stat-en-espera').textContent = enEspera;
-    document.getElementById('stat-operativos').textContent = operativos;
+    document.getElementById('stat-pendientes').textContent = partes.filter(p => p.estado === 'Pendiente').length;
+    document.getElementById('stat-en-proceso').textContent = partes.filter(p => p.estado === 'En Proceso').length;
+    document.getElementById('stat-en-espera').textContent = partes.filter(p => p.estado === 'En Espera' || p.estado === 'Esperando Repuesto').length;
+    document.getElementById('stat-operativos').textContent = partes.filter(p => p.estado === 'Operativo').length;
 }
 
 function renderTabla() {
     const filtroDominio = document.getElementById('filtro-dominio').value.toUpperCase();
-    const filtroTipo = document.getElementById('filtro-tipo-taller').value;
+    const filtroTipoRep = document.getElementById('filtro-tipo-rep').value;
+    const filtroTaller = document.getElementById('filtro-taller').value;
     const filtroEstado = document.getElementById('filtro-estado').value;
     const tbody = document.getElementById('tabla-partes');
 
@@ -59,49 +54,54 @@ function renderTabla() {
     if (tabActual === 'internos') datos = datos.filter(p => p.tipo_taller === 'INTERNO' && p.estado !== 'Operativo');
     else if (tabActual === 'externos') datos = datos.filter(p => p.tipo_taller === 'EXTERNO' && p.estado !== 'Operativo');
     else if (tabActual === 'operativos') datos = datos.filter(p => p.estado === 'Operativo');
-    else datos = datos.filter(p => p.estado !== 'Operativo'); // tab "todos" muestra no-operativos
 
-    // Filtros adicionales
+    // Filtros de columna
     if (filtroDominio) datos = datos.filter(p => p.dominio.toUpperCase().includes(filtroDominio));
-    if (filtroTipo) datos = datos.filter(p => p.tipo_taller === filtroTipo);
+    if (filtroTipoRep) datos = datos.filter(p => p.tipo_reparacion === filtroTipoRep);
+    if (filtroTaller) datos = datos.filter(p => p.taller_box === filtroTaller);
     if (filtroEstado) datos = datos.filter(p => p.estado === filtroEstado);
 
+    document.getElementById('tabla-count').textContent = `${datos.length} unidades`;
+
     if (datos.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><p>No hay unidades</p></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" class="empty-state"><p>Sin datos</p></td></tr>';
         return;
     }
 
+    let num = 1;
     tbody.innerHTML = datos.map(p => {
         const colorEstado = getColorEstado(p.estado);
-        const fechaIngreso = p.fecha_ingreso
-            ? new Date(p.fecha_ingreso + 'T12:00:00').toLocaleDateString('es-AR')
-            : '-';
-        const fechaFin = p.fecha_probable_fin
-            ? new Date(p.fecha_probable_fin + 'T12:00:00').toLocaleDateString('es-AR')
-            : '-';
-        const tallerDisplay = p.tipo_taller === 'EXTERNO' && p.taller_externo
-            ? p.taller_externo
-            : (p.taller_box || '-');
         const tipoRepBadge = p.tipo_reparacion === 'PROFUNDA' ? 'danger'
             : p.tipo_reparacion === 'LENTA' ? 'warning' : 'info';
-        const novedadCorta = p.novedad && p.novedad.length > 60
-            ? p.novedad.substring(0, 60) + '...'
-            : (p.novedad || '-');
+        const fechaIngreso = p.fecha_ingreso
+            ? formatFecha(p.fecha_ingreso) : '';
+        const fechaFin = p.fecha_probable_fin
+            ? formatFecha(p.fecha_probable_fin) : '';
+        const tallerDisplay = p.tipo_taller === 'EXTERNO' && p.taller_externo
+            ? p.taller_externo : (p.taller_box || '');
 
-        return `<tr>
-            <td><strong>${p.n_parte}</strong></td>
-            <td style="font-family:monospace; font-weight:600;">${p.dominio}</td>
-            <td title="${(p.novedad || '').replace(/"/g, '&quot;')}" style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${novedadCorta}</td>
-            <td>${tallerDisplay}</td>
-            <td><span class="badge badge-${tipoRepBadge}">${p.tipo_reparacion}</span></td>
+        return `<tr ondblclick="abrirEditar(${p.id})" style="cursor:pointer;">
+            <td class="text-muted">${num++}</td>
             <td>${fechaIngreso}</td>
             <td>${fechaFin}</td>
+            <td><strong style="font-family:monospace;">${p.dominio}</strong></td>
+            <td>${p.operacion}</td>
+            <td><span class="badge badge-${tipoRepBadge}">${p.tipo_reparacion}</span></td>
+            <td class="cell-wrap">${p.novedad || ''}</td>
+            <td>${tallerDisplay}</td>
             <td><span class="badge badge-${colorEstado}">${p.estado}</span></td>
+            <td class="cell-wrap text-muted">${p.observaciones || ''}</td>
             <td>
-                <button class="btn btn-outline btn-sm" onclick="abrirEditar(${p.id})">&#9998; Ver</button>
+                <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); abrirEditar(${p.id})">&#9998;</button>
             </td>
         </tr>`;
     }).join('');
+}
+
+function formatFecha(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr + 'T12:00:00');
+    return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
 function getColorEstado(estado) {
@@ -141,7 +141,6 @@ window.toggleTallerExterno = function() {
 window.guardarNuevo = async function() {
     const dominio = document.getElementById('nuevo-dominio').value.trim();
     const novedad = document.getElementById('nuevo-novedad').value.trim();
-
     if (!dominio) return alert('Ingresa el dominio');
     if (!novedad) return alert('Ingresa la novedad');
 
@@ -181,7 +180,6 @@ window.abrirEditar = async function(parteId) {
             ? `EXTERNO - ${parteEditando.taller_externo || ''}`
             : 'INTERNO';
 
-    // Cargar select de estados
     const selectEstado = document.getElementById('edit-estado');
     selectEstado.innerHTML = estadosDisponibles.map(e =>
         `<option value="${e.nombre}" ${e.nombre === parteEditando.estado ? 'selected' : ''}>${e.nombre}</option>`
