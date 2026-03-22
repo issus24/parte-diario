@@ -53,6 +53,7 @@ class ParteUpdate(BaseModel):
     ingreso_confirmado: Optional[bool] = None
     fecha_probable_fin: Optional[date] = None
     tipo_taller: Optional[str] = None
+    taller_externo: Optional[str] = None
     taller_box: Optional[str] = None
     novedad: Optional[str] = None
     tipo_reparacion: Optional[str] = None

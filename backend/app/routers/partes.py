@@ -202,6 +202,8 @@ def actualizar_parte(parte_id: int, data: ParteUpdate, db: Session = Depends(get
         parte.fecha_probable_fin = data.fecha_probable_fin
     if data.tipo_taller is not None:
         parte.tipo_taller = data.tipo_taller.upper()
+    if data.taller_externo is not None:
+        parte.taller_externo = data.taller_externo if data.taller_externo else None
     if data.taller_box is not None:
         parte.taller_box = data.taller_box.upper()
     if data.novedad is not None:

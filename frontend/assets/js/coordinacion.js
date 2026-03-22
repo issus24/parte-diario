@@ -203,6 +203,9 @@ window.abrirAsignar = function(parteId) {
     document.getElementById('asignar-nparte').textContent = parteSeleccionado.n_parte;
     document.getElementById('asignar-dominio').textContent = parteSeleccionado.dominio;
     document.getElementById('asignar-fecha').value = parteSeleccionado.fecha_ingreso || new Date().toISOString().split('T')[0];
+    document.getElementById('asignar-tipo-taller').value = parteSeleccionado.tipo_taller || 'INTERNO';
+    document.getElementById('asignar-taller-externo').value = parteSeleccionado.taller_externo || '';
+    toggleAsignarExterno();
 
     const probEl = document.getElementById('asignar-problemas');
     if (parteSeleccionado._desperfectos && parteSeleccionado._desperfectos.length > 0) {
@@ -217,13 +220,27 @@ window.abrirAsignar = function(parteId) {
     document.getElementById('modal-asignar').classList.add('active');
 };
 
+window.toggleAsignarExterno = function() {
+    const tipo = document.getElementById('asignar-tipo-taller').value;
+    document.getElementById('asignar-grupo-externo').style.display = tipo === 'EXTERNO' ? 'block' : 'none';
+};
+
 window.guardarAsignacion = async function() {
     if (!parteSeleccionado) return;
     const fecha = document.getElementById('asignar-fecha').value;
     if (!fecha) return alert('Selecciona una fecha');
 
+    const tipoTaller = document.getElementById('asignar-tipo-taller').value;
+    const tallerExterno = document.getElementById('asignar-taller-externo').value.trim();
+
+    if (tipoTaller === 'EXTERNO' && !tallerExterno) return alert('Ingresa el nombre del taller externo');
+
     try {
-        await actualizarParte(parteSeleccionado.id, { fecha_ingreso: fecha });
+        await actualizarParte(parteSeleccionado.id, {
+            fecha_ingreso: fecha,
+            tipo_taller: tipoTaller,
+            taller_externo: tipoTaller === 'EXTERNO' ? tallerExterno : null,
+        });
         cerrarModal('modal-asignar');
         await cargarPartes();
     } catch (err) {
