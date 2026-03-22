@@ -1,4 +1,4 @@
-import { getPartes, crearParte, actualizarParte } from './api.js';
+import { getPartes, getParte, crearParte, actualizarParte } from './api.js';
 
 let partes = [];
 let parteSeleccionado = null;
@@ -10,9 +10,28 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarPartes();
 });
 
+function sectorColor(sector) {
+    const map = {
+        'MECANICA': 'info', 'MECÁNICA': 'info',
+        'ELECTRICIDAD': 'warning',
+        'HERRERIA': 'muted', 'HERRERÍA': 'muted',
+        'GOMERIA': 'success', 'GOMERÍA': 'success',
+        'LAVADERO': 'primary',
+    };
+    return map[(sector || '').toUpperCase()] || 'muted';
+}
+
 async function cargarPartes() {
     try {
-        partes = await getPartes();
+        const lista = await getPartes();
+        // Cargar detalle de cada parte para tener desperfectos
+        partes = await Promise.all(lista.map(async p => {
+            try {
+                const detalle = await getParte(p.id);
+                p._desperfectos = detalle.desperfectos || [];
+            } catch { p._desperfectos = []; }
+            return p;
+        }));
         actualizarStats();
         renderTabla();
     } catch (err) {
@@ -71,11 +90,28 @@ function renderTabla() {
             ? `<button class="btn btn-primary btn-sm" onclick="abrirAsignar(${p.id})">Asignar</button>`
             : `<button class="btn btn-outline btn-sm" onclick="abrirAsignar(${p.id})">&#9998;</button>`;
 
+        // Mostrar desperfectos individuales si el parte tiene detalles cargados
+        let novedadHtml = '';
+        if (p._desperfectos && p._desperfectos.length > 0) {
+            novedadHtml = p._desperfectos.map(d => {
+                const sColor = sectorColor(d.sector);
+                return `<div class="desp-line"><span class="badge badge-${sColor}">${d.sector}</span> ${d.descripcion}</div>`;
+            }).join('');
+        } else {
+            // Parsear novedad separada por ". "
+            const problemas = (p.novedad || '').split('. ').filter(t => t.trim());
+            if (problemas.length > 1) {
+                novedadHtml = problemas.map(t => `<div class="desp-line">${t.trim()}</div>`).join('');
+            } else {
+                novedadHtml = p.novedad || '';
+            }
+        }
+
         return `<tr>
             <td class="text-muted">${num++}</td>
             <td><strong style="font-family:monospace;">${p.dominio}</strong></td>
             <td>${p.chofer_nombre || p.operacion}</td>
-            <td class="cell-wrap">${p.novedad || ''}</td>
+            <td class="cell-novedad">${novedadHtml}</td>
             <td><span class="badge badge-${tipoRepBadge}">${p.tipo_reparacion}</span></td>
             <td>${tallerDisplay}</td>
             <td>${fechaIngreso}</td>

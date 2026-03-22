@@ -235,6 +235,24 @@ table th {
 
 table tbody tr:hover { background: var(--bg-card-hover); }
 
+/* Novedad cell with multiple problems */
+.cell-novedad {
+    max-width: 350px;
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+
+.desp-line {
+    padding: 0.2rem 0;
+    border-bottom: 1px dashed var(--border);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.desp-line:last-child { border-bottom: none; }
+
+.desp-line .badge { margin-right: 0.3rem; font-size: 0.6rem; vertical-align: middle; }
+
 /* Filter row in table header */
 .filter-row td {
     padding: 0.3rem 0.5rem;
