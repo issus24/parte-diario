@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parte Diario - Logiteck</title>
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    <style>
+        .role-selector {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: calc(100vh - 56px);
+            gap: 2rem;
+            padding: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .role-card {
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 3rem 2.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 280px;
+            text-decoration: none;
+            color: var(--text);
+        }
+
+        .role-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.15);
+            transform: translateY(-4px);
+        }
+
+        .role-card .icon {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .role-card h2 {
+            font-size: 1.4rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .role-card p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1>&#128668; Parte Diario</h1>
+    </nav>
+
+    <main class="role-selector">
+        <a href="/coordinacion.html" class="role-card">
+            <div class="icon">&#128203;</div>
+            <h2>Coordinacion</h2>
+            <p>Recibir partes, asignar fechas de citacion y ver el estado general de la flota.</p>
+        </a>
+
+        <a href="/taller.html" class="role-card">
+            <div class="icon">&#128295;</div>
+            <h2>Taller</h2>
+            <p>Ver parte diario, actualizar el estado de cada reparacion y dar de alta vehiculos.</p>
+        </a>
+    </main>
+</body>
+</html>

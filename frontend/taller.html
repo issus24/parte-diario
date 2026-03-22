@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taller - Parte Diario</title>
+    <link rel="stylesheet" href="/assets/css/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <h1>&#128668; Parte Diario</h1>
+        <div class="navbar-links">
+            <a href="/">Inicio</a>
+            <a href="/coordinacion.html">Coordinacion</a>
+            <a href="/taller.html" class="active">Taller</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Navegacion por fecha -->
+        <div class="fecha-nav">
+            <button class="btn btn-outline btn-nav" onclick="cambiarFecha(-1)">&#9664;</button>
+            <div class="fecha-display" id="fecha-display"></div>
+            <button class="btn btn-outline btn-nav" onclick="cambiarFecha(1)">&#9654;</button>
+            <button class="btn btn-outline btn-sm" onclick="irAHoy()">Hoy</button>
+        </div>
+
+        <!-- Stats del dia -->
+        <div class="stats-grid" id="stats-taller">
+            <div class="stat-card">
+                <div class="stat-value" id="stat-vehiculos">-</div>
+                <div class="stat-label">Vehiculos citados</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-desperfectos">-</div>
+                <div class="stat-label">Desperfectos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-resueltos">-</div>
+                <div class="stat-label">Resueltos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-altas">-</div>
+                <div class="stat-label">Con alta</div>
+            </div>
+        </div>
+
+        <!-- Vehiculos del dia -->
+        <div id="vehiculos-container">
+            <div class="loading-center"><div class="spinner"></div></div>
+        </div>
+
+        <!-- Otros pendientes -->
+        <div style="margin-top: 2rem;">
+            <button class="btn btn-outline" onclick="togglePendientes()" id="btn-pendientes" style="display:none;">
+                &#9660; Ver otros partes pendientes
+            </button>
+            <div id="otros-pendientes" style="display:none; margin-top:1rem;"></div>
+        </div>
+    </div>
+
+    <script type="module" src="/assets/js/taller.js"></script>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coordinacion - Parte Diario</title>
+    <link rel="stylesheet" href="/assets/css/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <h1>&#128668; Parte Diario</h1>
+        <div class="navbar-links">
+            <a href="/">Inicio</a>
+            <a href="/coordinacion.html" class="active">Coordinacion</a>
+            <a href="/taller.html">Taller</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Stats -->
+        <div class="stats-grid" id="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="stat-sin-citar">-</div>
+                <div class="stat-label">Sin citar</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-citados-hoy">-</div>
+                <div class="stat-label">Citados hoy</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-en-taller">-</div>
+                <div class="stat-label">En taller</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-con-alta">-</div>
+                <div class="stat-label">Con alta</div>
+            </div>
+        </div>
+
+        <!-- Header + acciones -->
+        <div class="page-header">
+            <h2 class="page-title">Partes recibidos</h2>
+            <div style="display:flex; gap:0.5rem;">
+                <input type="text" class="form-control" id="filtro-patente" placeholder="Buscar patente..." style="width:200px;">
+                <button class="btn btn-primary" onclick="abrirModalNuevoParte()">+ Nuevo Parte</button>
+            </div>
+        </div>
+
+        <!-- Tabla de partes -->
+        <div class="card">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>N Parte</th>
+                            <th>Patente</th>
+                            <th>Chofer</th>
+                            <th>Desp.</th>
+                            <th>Fecha Carga</th>
+                            <th>Fecha Citacion</th>
+                            <th>Estado</th>
+                            <th>Accion</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-partes">
+                        <tr><td colspan="8" class="loading-center"><div class="spinner"></div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Asignar Fecha -->
+    <div class="modal-overlay" id="modal-fecha">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Asignar fecha de citacion</h3>
+                <button class="modal-close" onclick="cerrarModal('modal-fecha')">&times;</button>
+            </div>
+            <div>
+                <p style="margin-bottom:0.75rem;">
+                    Parte: <strong id="modal-fecha-nparte"></strong> |
+                    Patente: <strong id="modal-fecha-patente"></strong>
+                </p>
+                <div class="form-group">
+                    <label>Fecha de citacion</label>
+                    <input type="date" class="form-control" id="input-fecha-citacion">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="cerrarModal('modal-fecha')">Cancelar</button>
+                <button class="btn btn-primary" onclick="guardarFechaCitacion()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Nuevo Parte -->
+    <div class="modal-overlay" id="modal-nuevo">
+        <div class="modal" style="max-width:650px;">
+            <div class="modal-header">
+                <h3>Nuevo Parte</h3>
+                <button class="modal-close" onclick="cerrarModal('modal-nuevo')">&times;</button>
+            </div>
+            <div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                    <div class="form-group">
+                        <label>Patente</label>
+                        <input type="text" class="form-control" id="nuevo-patente" placeholder="ABC-123">
+                    </div>
+                    <div class="form-group">
+                        <label>Chofer</label>
+                        <input type="text" class="form-control" id="nuevo-chofer" placeholder="Nombre del chofer">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Kilometraje</label>
+                    <input type="number" class="form-control" id="nuevo-km" placeholder="Km actual">
+                </div>
+
+                <hr style="margin: 1rem 0; border: none; border-top: 1px solid var(--border);">
+                <h4 style="margin-bottom:0.75rem;">Desperfectos</h4>
+
+                <div id="lista-desperfectos-nuevo"></div>
+
+                <div style="display:grid; grid-template-columns:auto 1fr auto; gap:0.5rem; align-items:end;">
+                    <div class="form-group" style="margin:0;">
+                        <label>Sector</label>
+                        <select class="form-control" id="nuevo-sector">
+                            <option value="MECANICA">Mecanica</option>
+                            <option value="ELECTRICIDAD">Electricidad</option>
+                            <option value="HERRERIA">Herreria</option>
+                            <option value="GOMERIA">Gomeria</option>
+                            <option value="LAVADERO">Lavadero</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label>Descripcion</label>
+                        <input type="text" class="form-control" id="nuevo-descripcion" placeholder="Describir desperfecto">
+                    </div>
+                    <button class="btn btn-outline btn-sm" onclick="agregarDesperfectoNuevo()" style="height:36px;">+ Agregar</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="cerrarModal('modal-nuevo')">Cancelar</button>
+                <button class="btn btn-primary" onclick="guardarNuevoParte()">Crear Parte</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/assets/js/coordinacion.js"></script>
+</body>
+</html>
