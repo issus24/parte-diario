@@ -22,7 +22,9 @@ export function renderPatente(dominio) {
     }
 
     const tipo = esMercosur ? 'mercosur' : 'vieja';
-    const franja = esMercosur ? '<div class="placa-franja">MERCOSUR</div>' : '';
+    const franja = esMercosur
+        ? '<div class="placa-franja">REPUBLICA ARGENTINA</div>'
+        : '<div class="placa-franja">ARGENTINA</div>';
 
     return `<div class="patente-placa ${tipo}">
         ${franja}
