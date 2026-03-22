@@ -195,35 +195,44 @@ function renderTabletCards(datos) {
 
     container.innerHTML = datos.map(p => {
         const colorEstado = getColorEstado(p.estado);
-        const tipoRepBadge = p.tipo_reparacion === 'PROFUNDA' ? 'danger'
-            : p.tipo_reparacion === 'LENTA' ? 'warning' : 'info';
 
         // Progreso
-        let progreso = '';
+        let progresoHtml = '';
         if (p._desperfectos && p._desperfectos.length > 0) {
             const total = p._desperfectos.length;
             const resueltos = p._desperfectos.filter(d => esResolutivo(d.estado)).length;
-            progreso = `<span class="text-muted" style="font-size:0.8rem;">${resueltos}/${total}</span>`;
+            const pct = Math.round((resueltos / total) * 100);
+            progresoHtml = `<div class="tcc-progress">
+                <div class="tcc-progress-bar" style="width:${pct}%"></div>
+            </div>
+            <span class="tcc-progress-text">${resueltos}/${total}</span>`;
         }
 
-        // Mini lista de problemas (solo texto corto)
-        let despMini = '';
+        // Desperfectos como filas compactas
+        let despRows = '';
         if (p._desperfectos && p._desperfectos.length > 0) {
-            despMini = p._desperfectos.map(d => {
+            despRows = p._desperfectos.map(d => {
                 const sColor = sectorColor(d.sector);
                 const dColor = getColorEstado(d.estado);
-                return `<span class="badge badge-${sColor}">${d.sector}</span><span class="badge badge-${dColor}" style="margin-left:2px;margin-right:6px;">${d.estado}</span>`;
+                return `<div class="tcc-desp-row">
+                    <span class="badge badge-${sColor}" style="min-width:85px;justify-content:center;">${d.sector}</span>
+                    <span class="tcc-desp-desc">${d.descripcion}</span>
+                    <span class="badge badge-${dColor}">${d.estado}</span>
+                </div>`;
             }).join('');
         }
 
         return `<div class="tablet-card-compact" onclick="abrirEditar(${p.id})">
-            <div class="tcc-left">
-                <span class="tcc-dominio">${p.dominio}</span>
-                <span class="badge badge-${tipoRepBadge}">${p.tipo_reparacion}</span>
-                <span class="badge badge-${colorEstado}">${p.estado}</span>
-                ${progreso}
+            <div class="tcc-header">
+                <div class="tcc-left">
+                    <span class="tcc-dominio">${p.dominio}</span>
+                    <span class="badge badge-${colorEstado}">${p.estado}</span>
+                </div>
+                <div class="tcc-right">
+                    ${progresoHtml}
+                </div>
             </div>
-            <div class="tcc-badges">${despMini}</div>
+            <div class="tcc-body">${despRows}</div>
         </div>`;
     }).join('');
 }
