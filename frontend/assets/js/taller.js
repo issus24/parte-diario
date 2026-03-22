@@ -1,9 +1,20 @@
-import { getPartes, actualizarParte, getEstados } from './api.js';
+import { getPartes, getParte, getEstados, actualizarParte, actualizarEstadoDesperfecto } from './api.js';
 
 let partes = [];
 let estadosDisponibles = [];
 let parteEditando = null;
 let tabActual = 'internos';
+
+function sectorColor(sector) {
+    const map = {
+        'MECANICA': 'info', 'MECÁNICA': 'info',
+        'ELECTRICIDAD': 'warning',
+        'HERRERIA': 'muted', 'HERRERÍA': 'muted',
+        'GOMERIA': 'success', 'GOMERÍA': 'success',
+        'LAVADERO': 'primary',
+    };
+    return map[(sector || '').toUpperCase()] || 'muted';
+}
 
 // --- INIT ---
 document.addEventListener('DOMContentLoaded', async () => {
@@ -23,10 +34,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function cargarDatos() {
     try {
-        partes = await getPartes();
-        // Solo mostrar los que tienen fecha de ingreso (asignados por coordinacion)
-        partes = partes.filter(p => p.fecha_ingreso);
+        const lista = await getPartes();
+        // Cargar detalle con desperfectos
+        partes = await Promise.all(lista.map(async p => {
+            try {
+                const detalle = await getParte(p.id);
+                p._desperfectos = detalle.desperfectos || [];
+            } catch { p._desperfectos = []; }
+            return p;
+        }));
         actualizarStats();
+        actualizarTabCounts();
         renderTabla();
     } catch (err) {
         console.error('Error cargando datos:', err);
@@ -35,16 +53,37 @@ async function cargarDatos() {
     }
 }
 
+function filtrarPorTab(datos) {
+    if (tabActual === 'internos') return datos.filter(p => p.fecha_ingreso && p.tipo_taller === 'INTERNO' && p.estado !== 'Operativo');
+    if (tabActual === 'externos') return datos.filter(p => p.fecha_ingreso && p.tipo_taller === 'EXTERNO' && p.estado !== 'Operativo');
+    if (tabActual === 'pendientes') return datos.filter(p => !p.fecha_ingreso && p.estado !== 'Operativo');
+    if (tabActual === 'operativos') return datos.filter(p => p.estado === 'Operativo');
+    return datos;
+}
+
 function actualizarStats() {
-    document.getElementById('stat-pendientes').textContent = partes.filter(p => p.estado === 'Pendiente').length;
-    document.getElementById('stat-en-proceso').textContent = partes.filter(p => p.estado === 'En Proceso').length;
-    document.getElementById('stat-en-espera').textContent = partes.filter(p => p.estado === 'En Espera' || p.estado === 'Esperando Repuesto').length;
+    const activos = partes.filter(p => p.estado !== 'Operativo');
+    document.getElementById('stat-pendientes').textContent = activos.filter(p => p.estado === 'Pendiente').length;
+    document.getElementById('stat-en-proceso').textContent = activos.filter(p => p.estado === 'En Proceso').length;
+    document.getElementById('stat-en-espera').textContent = activos.filter(p => p.estado === 'En Espera' || p.estado === 'Esperando Repuesto').length;
     document.getElementById('stat-operativos').textContent = partes.filter(p => p.estado === 'Operativo').length;
 }
 
-function getColorEstado(estado) {
-    const e = estadosDisponibles.find(s => s.nombre === estado);
-    return e ? e.color : 'muted';
+function actualizarTabCounts() {
+    const internos = partes.filter(p => p.fecha_ingreso && p.tipo_taller === 'INTERNO' && p.estado !== 'Operativo').length;
+    const externos = partes.filter(p => p.fecha_ingreso && p.tipo_taller === 'EXTERNO' && p.estado !== 'Operativo').length;
+    const pendientes = partes.filter(p => !p.fecha_ingreso && p.estado !== 'Operativo').length;
+    const operativos = partes.filter(p => p.estado === 'Operativo').length;
+
+    document.getElementById('tab-count-internos').textContent = internos ? `(${internos})` : '';
+    document.getElementById('tab-count-externos').textContent = externos ? `(${externos})` : '';
+    document.getElementById('tab-count-pendientes').textContent = pendientes ? `(${pendientes})` : '';
+    document.getElementById('tab-count-operativos').textContent = operativos ? `(${operativos})` : '';
+}
+
+function getColorEstado(estadoNombre) {
+    const estado = estadosDisponibles.find(e => e.nombre === estadoNombre);
+    return estado ? estado.color : 'muted';
 }
 
 function renderTabla() {
@@ -54,14 +93,8 @@ function renderTabla() {
     const filtroEstado = document.getElementById('filtro-estado').value;
     const tbody = document.getElementById('tabla-taller');
 
-    let datos = partes;
+    let datos = filtrarPorTab(partes);
 
-    // Filtro por tab
-    if (tabActual === 'internos') datos = datos.filter(p => p.tipo_taller === 'INTERNO' && p.estado !== 'Operativo');
-    else if (tabActual === 'externos') datos = datos.filter(p => p.tipo_taller === 'EXTERNO' && p.estado !== 'Operativo');
-    else if (tabActual === 'operativos') datos = datos.filter(p => p.estado === 'Operativo');
-
-    // Filtros de columna
     if (filtroDominio) datos = datos.filter(p => p.dominio.toUpperCase().includes(filtroDominio));
     if (filtroTipoRep) datos = datos.filter(p => p.tipo_reparacion === filtroTipoRep);
     if (filtroTaller) datos = datos.filter(p => p.taller_box === filtroTaller);
@@ -79,10 +112,41 @@ function renderTabla() {
         const colorEstado = getColorEstado(p.estado);
         const tipoRepBadge = p.tipo_reparacion === 'PROFUNDA' ? 'danger'
             : p.tipo_reparacion === 'LENTA' ? 'warning' : 'info';
-        const fechaIngreso = p.fecha_ingreso ? formatFecha(p.fecha_ingreso) : '';
+        const fechaIngreso = p.fecha_ingreso ? formatFecha(p.fecha_ingreso) : '<span class="text-muted">Sin asignar</span>';
         const fechaFin = p.fecha_probable_fin ? formatFecha(p.fecha_probable_fin) : '';
         const tallerDisplay = p.tipo_taller === 'EXTERNO' && p.taller_externo
             ? p.taller_externo : (p.taller_box || '');
+
+        // Novedad con desperfectos individuales
+        let novedadHtml = '';
+        if (p._desperfectos && p._desperfectos.length > 0) {
+            novedadHtml = p._desperfectos.map(d => {
+                const sColor = sectorColor(d.sector);
+                const dEstColor = getColorEstado(d.estado);
+                return `<div class="desp-line">
+                    <span class="badge badge-${sColor}">${d.sector}</span>
+                    <span class="badge badge-${dEstColor}" style="margin-left:2px;">${d.estado}</span>
+                    ${d.descripcion}
+                </div>`;
+            }).join('');
+        } else {
+            novedadHtml = p.novedad || '';
+        }
+
+        // Estado del parte con progreso
+        let estadoHtml = '';
+        if (p._desperfectos && p._desperfectos.length > 0) {
+            const total = p._desperfectos.length;
+            const resueltos = p._desperfectos.filter(d => d.estado === 'Operativo' || d.estado === 'No Aplica').length;
+            if (resueltos === total) {
+                estadoHtml = '<span class="badge badge-success">COMPLETADO</span>';
+            } else {
+                estadoHtml = `<span class="badge badge-${colorEstado}">${p.estado}</span>
+                    <div style="font-size:0.65rem; color:var(--text-muted); margin-top:2px;">${resueltos}/${total} resueltos</div>`;
+            }
+        } else {
+            estadoHtml = `<span class="badge badge-${colorEstado}">${p.estado}</span>`;
+        }
 
         return `<tr ondblclick="abrirEditar(${p.id})" style="cursor:pointer;">
             <td class="text-muted">${num++}</td>
@@ -91,9 +155,9 @@ function renderTabla() {
             <td><strong style="font-family:monospace;">${p.dominio}</strong></td>
             <td>${p.operacion}</td>
             <td><span class="badge badge-${tipoRepBadge}">${p.tipo_reparacion}</span></td>
-            <td class="cell-wrap">${p.novedad || ''}</td>
+            <td class="cell-novedad">${novedadHtml}</td>
             <td>${tallerDisplay}</td>
-            <td><span class="badge badge-${colorEstado}">${p.estado}</span></td>
+            <td>${estadoHtml}</td>
             <td class="cell-wrap text-muted">${p.observaciones || ''}</td>
             <td>
                 <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); abrirEditar(${p.id})">&#9998;</button>
@@ -130,6 +194,7 @@ window.abrirEditar = function(parteId) {
             ? `EXTERNO - ${parteEditando.taller_externo || ''}`
             : `INTERNO - ${parteEditando.taller_box || ''}`;
 
+    // Estado general
     const selectEstado = document.getElementById('edit-estado');
     selectEstado.innerHTML = estadosDisponibles.map(e =>
         `<option value="${e.nombre}" ${e.nombre === parteEditando.estado ? 'selected' : ''}>${e.nombre}</option>`
@@ -141,14 +206,49 @@ window.abrirEditar = function(parteId) {
     document.getElementById('edit-novedad').value = parteEditando.novedad || '';
     document.getElementById('edit-observaciones').value = parteEditando.observaciones || '';
 
+    // Renderizar desperfectos individuales con selects de estado
+    const despContainer = document.getElementById('edit-desperfectos');
+    if (parteEditando._desperfectos && parteEditando._desperfectos.length > 0) {
+        despContainer.innerHTML = `
+            <label style="font-size:0.75rem; font-weight:500; color:var(--text-secondary); margin-bottom:0.5rem; display:block;">Desperfectos</label>
+            ${parteEditando._desperfectos.map(d => {
+                const sColor = sectorColor(d.sector);
+                const opts = estadosDisponibles.map(e =>
+                    `<option value="${e.nombre}" ${e.nombre === d.estado ? 'selected' : ''}>${e.nombre}</option>`
+                ).join('');
+                return `<div style="display:flex; align-items:center; gap:0.5rem; padding:0.4rem 0; border-bottom:1px dashed var(--border); flex-wrap:wrap;">
+                    <span class="badge badge-${sColor}">${d.sector}</span>
+                    <span style="flex:1; font-size:0.8rem; min-width:120px;">${d.descripcion}</span>
+                    <select class="form-control" style="width:150px; font-size:0.75rem;" onchange="cambiarEstadoDesp(${d.id}, this.value)">${opts}</select>
+                </div>`;
+            }).join('')}
+        `;
+        despContainer.style.display = 'block';
+    } else {
+        despContainer.style.display = 'none';
+    }
+
     document.getElementById('modal-editar').classList.add('active');
+};
+
+window.cambiarEstadoDesp = async function(despId, nuevoEstado) {
+    try {
+        await actualizarEstadoDesperfecto(despId, nuevoEstado);
+        await cargarDatos();
+        // Re-abrir modal con datos actualizados
+        if (parteEditando) {
+            const updated = partes.find(p => p.id === parteEditando.id);
+            if (updated) abrirEditar(updated.id);
+        }
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
 };
 
 window.guardarEdicion = async function() {
     if (!parteEditando) return;
 
     const data = {
-        estado: document.getElementById('edit-estado').value,
         tipo_reparacion: document.getElementById('edit-tipo-rep').value,
         taller_box: document.getElementById('edit-taller-box').value,
         fecha_probable_fin: document.getElementById('edit-fecha-fin').value || null,
