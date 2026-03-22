@@ -9,8 +9,9 @@ import os
 
 from app.core.config import settings
 from app.core.database import engine, Base
-from app.models import Estado, Parte, Desperfecto, SyncLog
+from app.models import Estado, Parte, Desperfecto, Adjunto, SyncLog
 from app.routers import partes, desperfectos, estados
+from app.routers import uploads
 
 
 # --- Anti-cache middleware (desarrollo) ---
@@ -58,6 +59,7 @@ def on_startup():
                 "observaciones": "TEXT",
                 "fecha_ingreso": "DATE",
                 "fecha_probable_fin": "DATE",
+                "chofer_nombre": "VARCHAR(100)",
             }
             for col, col_type in new_cols.items():
                 if col not in existing_cols:
@@ -103,11 +105,27 @@ app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=["*"])
 app.include_router(partes.router, prefix="/api")
 app.include_router(desperfectos.router, prefix="/api")
 app.include_router(estados.router, prefix="/api")
+app.include_router(uploads.router, prefix="/api")
 
 # Servir frontend estático
 frontend_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "frontend")
+
+# Directorio de uploads
+uploads_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
+os.makedirs(uploads_path, exist_ok=True)
+
 if os.path.exists(frontend_path):
     app.mount("/assets", StaticFiles(directory=os.path.join(frontend_path, "assets")), name="assets")
+    app.mount("/uploads", StaticFiles(directory=uploads_path), name="uploads")
+
+    # PWA: manifest y service worker deben estar en root
+    @app.get("/manifest.json")
+    async def serve_manifest():
+        return FileResponse(os.path.join(frontend_path, "manifest.json"))
+
+    @app.get("/sw.js")
+    async def serve_sw():
+        return FileResponse(os.path.join(frontend_path, "sw.js"), media_type="application/javascript")
 
     @app.get("/")
     async def serve_index():

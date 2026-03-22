@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0f1117">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Chofer - Parte Diario</title>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    <style>
+        .chofer-container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        .chofer-header {
+            text-align: center;
+            padding: 1rem 0;
+        }
+        .chofer-header h2 { font-size: 1.1rem; margin-top: 0.5rem; }
+        .chofer-header p { font-size: 0.8rem; color: var(--text-muted); }
+
+        .form-section { margin-bottom: 1.25rem; }
+        .form-section label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.35rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .form-control-lg {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            color: var(--text);
+            background: var(--bg-input);
+        }
+        .form-control-lg:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-light); }
+        .form-control-lg::placeholder { color: var(--text-muted); }
+        textarea.form-control-lg { resize: vertical; min-height: 80px; font-family: inherit; }
+
+        /* Media section */
+        .media-section { margin-bottom: 1.25rem; }
+        .media-label { font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 0.5rem; }
+
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .media-thumb {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        .media-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .media-thumb .remove-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.7);
+            color: #fff;
+            border: none;
+            font-size: 0.7rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .media-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .media-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .media-btn .icon { font-size: 1.2rem; }
+
+        /* Audio */
+        .audio-list { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.5rem; }
+        .audio-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        .audio-item audio { flex: 1; height: 32px; }
+        .audio-item .remove-btn {
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .rec-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .rec-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .rec-btn.recording {
+            border-color: var(--danger);
+            color: var(--danger);
+            background: var(--danger-light);
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+        /* Submit */
+        .submit-btn {
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: 10px;
+            background: var(--primary);
+            color: #000;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .submit-btn:hover { background: var(--primary-dark); }
+        .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Success */
+        .success-screen {
+            display: none;
+            text-align: center;
+            padding: 3rem 1rem;
+        }
+        .success-screen.active { display: block; }
+        .success-icon { font-size: 4rem; margin-bottom: 1rem; }
+        .success-screen h2 { color: var(--primary); margin-bottom: 0.5rem; }
+        .success-screen p { color: var(--text-muted); margin-bottom: 1.5rem; }
+
+        #form-container.hidden { display: none; }
+
+        /* Hide file input */
+        .hidden-input { display: none; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1>&#128668; Parte Diario</h1>
+        <a href="/" style="color:var(--text-muted); text-decoration:none; font-size:0.8rem;">Inicio</a>
+    </nav>
+
+    <div class="chofer-container">
+        <div class="chofer-header">
+            <div style="font-size:2.5rem;">&#128666;</div>
+            <h2>Reportar Desperfecto</h2>
+            <p>Completa el formulario para generar un parte</p>
+        </div>
+
+        <!-- Form -->
+        <div id="form-container">
+            <div class="form-section">
+                <label>Dominio (Patente)</label>
+                <input type="text" class="form-control-lg" id="inp-dominio" placeholder="Ej: ABC 123" autocapitalize="characters">
+            </div>
+
+            <div class="form-section">
+                <label>Tu Nombre</label>
+                <input type="text" class="form-control-lg" id="inp-nombre" placeholder="Nombre del chofer">
+            </div>
+
+            <div class="form-section">
+                <label>Descripcion del problema</label>
+                <textarea class="form-control-lg" id="inp-novedad" rows="3" placeholder="Describe el desperfecto o problema..."></textarea>
+            </div>
+
+            <!-- Fotos -->
+            <div class="media-section">
+                <div class="media-label">Fotos</div>
+                <div class="media-grid" id="fotos-grid"></div>
+                <button type="button" class="media-btn" onclick="document.getElementById('foto-input').click()">
+                    <span class="icon">&#128247;</span> Tomar Foto
+                </button>
+                <input type="file" accept="image/*" capture="environment" class="hidden-input" id="foto-input" onchange="agregarFoto(this)" multiple>
+            </div>
+
+            <!-- Audio -->
+            <div class="media-section">
+                <div class="media-label">Notas de Voz</div>
+                <div class="audio-list" id="audio-list"></div>
+                <button type="button" class="rec-btn" id="rec-btn" onclick="toggleGrabacion()">
+                    <span class="icon">&#127908;</span> <span id="rec-text">Grabar Audio</span>
+                </button>
+            </div>
+
+            <button type="button" class="submit-btn" id="submit-btn" onclick="enviarParte()">
+                Enviar Parte
+            </button>
+        </div>
+
+        <!-- Success -->
+        <div class="success-screen" id="success-screen">
+            <div class="success-icon">&#9989;</div>
+            <h2>Parte Enviado</h2>
+            <p>N&#176; <strong id="success-nparte"></strong></p>
+            <p>Tu reporte fue recibido. Coordinacion lo revisara.</p>
+            <button class="submit-btn" onclick="resetForm()">Crear Otro Parte</button>
+        </div>
+    </div>
+
+    <script>
+        // --- FOTOS ---
+        let fotos = []; // array de Blobs
+
+        function agregarFoto(input) {
+            for (const file of input.files) {
+                comprimirImagen(file).then(blob => {
+                    fotos.push(blob);
+                    renderFotos();
+                });
+            }
+            input.value = '';
+        }
+
+        function comprimirImagen(file) {
+            return new Promise(resolve => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const maxW = 1200;
+                    const scale = Math.min(1, maxW / img.width);
+                    canvas.width = img.width * scale;
+                    canvas.height = img.height * scale;
+                    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                    canvas.toBlob(resolve, 'image/jpeg', 0.7);
+                };
+                img.src = URL.createObjectURL(file);
+            });
+        }
+
+        function renderFotos() {
+            const grid = document.getElementById('fotos-grid');
+            grid.innerHTML = fotos.map((blob, i) => `
+                <div class="media-thumb">
+                    <img src="${URL.createObjectURL(blob)}">
+                    <button class="remove-btn" onclick="quitarFoto(${i})">&times;</button>
+                </div>
+            `).join('');
+        }
+
+        function quitarFoto(i) {
+            fotos.splice(i, 1);
+            renderFotos();
+        }
+
+        // --- AUDIO ---
+        let audios = []; // array of Blobs
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let grabando = false;
+
+        function toggleGrabacion() {
+            if (grabando) {
+                detenerGrabacion();
+            } else {
+                iniciarGrabacion();
+            }
+        }
+
+        async function iniciarGrabacion() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+                    ? 'audio/webm;codecs=opus' : 'audio/webm';
+                mediaRecorder = new MediaRecorder(stream, { mimeType });
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+                    audios.push(blob);
+                    renderAudios();
+                    stream.getTracks().forEach(t => t.stop());
+                };
+
+                mediaRecorder.start();
+                grabando = true;
+                document.getElementById('rec-btn').classList.add('recording');
+                document.getElementById('rec-text').textContent = 'Detener Grabacion';
+            } catch (err) {
+                alert('No se pudo acceder al microfono');
+            }
+        }
+
+        function detenerGrabacion() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            grabando = false;
+            document.getElementById('rec-btn').classList.remove('recording');
+            document.getElementById('rec-text').textContent = 'Grabar Audio';
+        }
+
+        function renderAudios() {
+            const list = document.getElementById('audio-list');
+            list.innerHTML = audios.map((blob, i) => `
+                <div class="audio-item">
+                    <audio controls src="${URL.createObjectURL(blob)}"></audio>
+                    <button class="remove-btn" onclick="quitarAudio(${i})">&times;</button>
+                </div>
+            `).join('');
+        }
+
+        function quitarAudio(i) {
+            audios.splice(i, 1);
+            renderAudios();
+        }
+
+        // --- ENVIAR ---
+        async function enviarParte() {
+            const dominio = document.getElementById('inp-dominio').value.trim();
+            const nombre = document.getElementById('inp-nombre').value.trim();
+            const novedad = document.getElementById('inp-novedad').value.trim();
+
+            if (!dominio) return alert('Ingresa el dominio (patente)');
+            if (!novedad) return alert('Describe el problema');
+
+            const btn = document.getElementById('submit-btn');
+            btn.disabled = true;
+            btn.textContent = 'Enviando...';
+
+            try {
+                const formData = new FormData();
+                formData.append('dominio', dominio);
+                formData.append('chofer_nombre', nombre);
+                formData.append('novedad', novedad);
+
+                fotos.forEach((blob, i) => {
+                    formData.append('fotos', blob, `foto_${i}.jpg`);
+                });
+                audios.forEach((blob, i) => {
+                    formData.append('audios', blob, `audio_${i}.webm`);
+                });
+
+                const res = await fetch('/api/partes/chofer', { method: 'POST', body: formData });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || 'Error al enviar');
+                }
+
+                const data = await res.json();
+                document.getElementById('success-nparte').textContent = data.n_parte;
+                document.getElementById('form-container').classList.add('hidden');
+                document.getElementById('success-screen').classList.add('active');
+            } catch (err) {
+                alert('Error: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Enviar Parte';
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('inp-dominio').value = '';
+            document.getElementById('inp-nombre').value = '';
+            document.getElementById('inp-novedad').value = '';
+            fotos = [];
+            audios = [];
+            renderFotos();
+            renderAudios();
+            document.getElementById('form-container').classList.remove('hidden');
+            document.getElementById('success-screen').classList.remove('active');
+        }
+
+        // PWA: register service worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(() => {});
+        }
+    </script>
+</body>
+</html>

@@ -93,6 +93,7 @@ def listar_partes(
             id=parte.id,
             n_parte=parte.n_parte,
             dominio=parte.dominio,
+            chofer_nombre=parte.chofer_nombre,
             operacion=parte.operacion,
             tipo_reparacion=parte.tipo_reparacion,
             tipo_taller=parte.tipo_taller,

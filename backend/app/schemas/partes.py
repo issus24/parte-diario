@@ -61,6 +61,7 @@ class ParteResponse(BaseModel):
     id: int
     n_parte: str
     dominio: str
+    chofer_nombre: Optional[str] = None
     operacion: str
     tipo_reparacion: str
     tipo_taller: str
@@ -82,6 +83,7 @@ class ParteResponse(BaseModel):
 
 class ParteListItem(BaseModel):
     id: int
+    chofer_nombre: Optional[str] = None
     n_parte: str
     dominio: str
     operacion: str

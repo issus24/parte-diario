@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0f1117">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Parte Diario - Logiteck</title>
+    <link rel="manifest" href="/manifest.json">
     <link rel="stylesheet" href="/assets/css/styles.css">
 </head>
 <body>
@@ -13,10 +17,16 @@
     </nav>
 
     <main class="role-selector">
+        <a href="/chofer.html" class="role-card">
+            <div class="icon">&#128666;</div>
+            <h2>Chofer</h2>
+            <p>Reportar desperfectos del vehiculo con fotos y notas de voz.</p>
+        </a>
+
         <a href="/coordinacion.html" class="role-card">
             <div class="icon">&#128203;</div>
             <h2>Coordinacion</h2>
-            <p>Recibir partes, gestionar unidades y ver el estado general de la flota.</p>
+            <p>Recibir partes, gestionar unidades y asignar ingreso a taller.</p>
         </a>
 
         <a href="/taller.html" class="role-card">
@@ -25,5 +35,11 @@
             <p>Ver parte diario, actualizar estados de reparacion y dar de alta vehiculos.</p>
         </a>
     </main>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(() => {});
+        }
+    </script>
 </body>
 </html>

@@ -74,7 +74,7 @@ function renderTabla() {
         return `<tr>
             <td class="text-muted">${num++}</td>
             <td><strong style="font-family:monospace;">${p.dominio}</strong></td>
-            <td>${p.operacion}</td>
+            <td>${p.chofer_nombre || p.operacion}</td>
             <td class="cell-wrap">${p.novedad || ''}</td>
             <td><span class="badge badge-${tipoRepBadge}">${p.tipo_reparacion}</span></td>
             <td>${tallerDisplay}</td>
