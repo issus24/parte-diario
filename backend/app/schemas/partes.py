@@ -50,6 +50,7 @@ class ParteUpdate(BaseModel):
     estado: Optional[str] = None
     observaciones: Optional[str] = None
     fecha_ingreso: Optional[date] = None
+    ingreso_confirmado: Optional[bool] = None
     fecha_probable_fin: Optional[date] = None
     tipo_taller: Optional[str] = None
     taller_box: Optional[str] = None
@@ -71,6 +72,7 @@ class ParteResponse(BaseModel):
     estado: str
     observaciones: Optional[str]
     fecha_ingreso: Optional[date]
+    ingreso_confirmado: bool = False
     fecha_probable_fin: Optional[date]
     alta: bool
     desperfectos: List[DesperfectoResponse] = []
@@ -95,6 +97,7 @@ class ParteListItem(BaseModel):
     estado: str
     observaciones: Optional[str]
     fecha_ingreso: Optional[date]
+    ingreso_confirmado: bool = False
     fecha_probable_fin: Optional[date]
     alta: bool
     cant_desperfectos: int = 0

@@ -36,25 +36,27 @@ async function cargarPartes() {
     } catch (err) {
         console.error('Error cargando partes:', err);
         document.getElementById('tabla-partes').innerHTML =
-            '<tr><td colspan="9" class="empty-state"><p>Error al cargar datos</p></td></tr>';
+            '<tr><td colspan="8" class="empty-state"><p>Error al cargar datos</p></td></tr>';
     }
 }
 
 function actualizarStats() {
-    const sinAsignar = partes.filter(p => !p.fecha_ingreso && p.estado !== 'Operativo').length;
-    const enTaller = partes.filter(p => p.fecha_ingreso && p.estado !== 'Operativo').length;
+    const sinFecha = partes.filter(p => !p.fecha_ingreso && p.estado === 'Pendiente de Ingreso').length;
+    const conFechaSinConfirmar = partes.filter(p => p.fecha_ingreso && !p.ingreso_confirmado && p.estado === 'Pendiente de Ingreso').length;
+    const enTaller = partes.filter(p => p.ingreso_confirmado && p.estado !== 'Operativo').length;
     const operativos = partes.filter(p => p.estado === 'Operativo').length;
 
-    document.getElementById('stat-sin-asignar').textContent = sinAsignar;
+    document.getElementById('stat-sin-asignar').textContent = sinFecha;
+    document.getElementById('stat-por-confirmar').textContent = conFechaSinConfirmar;
     document.getElementById('stat-en-taller').textContent = enTaller;
     document.getElementById('stat-operativos').textContent = operativos;
-    document.getElementById('stat-total').textContent = partes.length;
 }
 
 function getEstadoDisplay(p) {
     if (p.estado === 'Operativo') return '<span class="badge badge-success">OPERATIVO</span>';
-    if (!p.fecha_ingreso) return '<span class="badge badge-warning">SIN ASIGNAR</span>';
-    // Contar desperfectos resueltos
+    if (!p.fecha_ingreso) return '<span class="badge badge-muted">PEND. INGRESO</span>';
+    if (!p.ingreso_confirmado) return '<span class="badge badge-warning">CITADO - SIN CONFIRMAR</span>';
+    // En taller
     const total = p._desperfectos.length;
     if (total > 0) {
         const resueltos = p._desperfectos.filter(d => d.estado === 'Operativo' || d.estado === 'No Aplica').length;
@@ -72,14 +74,15 @@ function renderTabla() {
     let datos = partes;
 
     if (filtroDominio) datos = datos.filter(p => p.dominio.toUpperCase().includes(filtroDominio));
-    if (filtroEstado === 'sin-asignar') datos = datos.filter(p => !p.fecha_ingreso && p.estado !== 'Operativo');
-    else if (filtroEstado === 'asignado') datos = datos.filter(p => p.fecha_ingreso && p.estado !== 'Operativo');
+    if (filtroEstado === 'sin-fecha') datos = datos.filter(p => !p.fecha_ingreso && p.estado === 'Pendiente de Ingreso');
+    else if (filtroEstado === 'por-confirmar') datos = datos.filter(p => p.fecha_ingreso && !p.ingreso_confirmado && p.estado === 'Pendiente de Ingreso');
+    else if (filtroEstado === 'en-taller') datos = datos.filter(p => p.ingreso_confirmado && p.estado !== 'Operativo');
     else if (filtroEstado === 'Operativo') datos = datos.filter(p => p.estado === 'Operativo');
 
     document.getElementById('tabla-count').textContent = `${datos.length} partes`;
 
     if (datos.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><p>Sin datos</p></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><p>Sin datos</p></td></tr>';
         return;
     }
 
@@ -87,7 +90,7 @@ function renderTabla() {
     tbody.innerHTML = datos.map(p => {
         const fechaIngreso = p.fecha_ingreso ? formatFecha(p.fecha_ingreso) : '';
 
-        // Novedad con desperfectos individuales
+        // Novedad con desperfectos
         let novedadHtml = '';
         if (p._desperfectos && p._desperfectos.length > 0) {
             novedadHtml = p._desperfectos.map(d => {
@@ -101,17 +104,22 @@ function renderTabla() {
                 : (p.novedad || '');
         }
 
-        const sinAsignar = !p.fecha_ingreso && p.estado !== 'Operativo';
-        const accion = sinAsignar
-            ? `<button class="btn btn-primary btn-sm" onclick="abrirAsignar(${p.id})">Asignar</button>`
-            : `<button class="btn btn-outline btn-sm" onclick="abrirAsignar(${p.id})">&#9998;</button>`;
+        // Acción según estado
+        let accion = '';
+        if (!p.fecha_ingreso) {
+            accion = `<button class="btn btn-primary btn-sm" onclick="abrirAsignar(${p.id})">Citar</button>`;
+        } else if (!p.ingreso_confirmado) {
+            accion = `<button class="btn btn-success btn-sm" onclick="confirmarIngreso(${p.id})">Confirmar</button>
+                       <button class="btn btn-outline btn-sm" onclick="abrirAsignar(${p.id})" title="Cambiar fecha">&#9998;</button>`;
+        } else {
+            accion = `<span class="text-muted" style="font-size:0.7rem;">&#10003; Ingresado</span>`;
+        }
 
         return `<tr>
             <td class="text-muted">${num++}</td>
             <td><strong style="font-family:monospace;">${p.dominio}</strong></td>
             <td>${p.chofer_nombre || p.operacion}</td>
             <td class="cell-novedad">${novedadHtml}</td>
-            <td>${p.taller_box || ''}</td>
             <td>${fechaIngreso}</td>
             <td>${getEstadoDisplay(p)}</td>
             <td>${accion}</td>
@@ -125,7 +133,17 @@ function formatFecha(dateStr) {
     return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
-// --- MODAL NUEVO (ya no se usa tanto, los partes vienen de chofer) ---
+// --- CONFIRMAR INGRESO ---
+window.confirmarIngreso = async function(parteId) {
+    try {
+        await actualizarParte(parteId, { ingreso_confirmado: true });
+        await cargarPartes();
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
+};
+
+// --- MODAL NUEVO ---
 window.abrirModalNuevo = function() {
     document.getElementById('nuevo-dominio').value = '';
     document.getElementById('nuevo-operacion').value = 'BASE TT';
@@ -179,7 +197,6 @@ window.abrirAsignar = function(parteId) {
     document.getElementById('asignar-dominio').textContent = parteSeleccionado.dominio;
     document.getElementById('asignar-fecha').value = parteSeleccionado.fecha_ingreso || new Date().toISOString().split('T')[0];
 
-    // Mostrar problemas
     const probEl = document.getElementById('asignar-problemas');
     if (parteSeleccionado._desperfectos && parteSeleccionado._desperfectos.length > 0) {
         probEl.innerHTML = parteSeleccionado._desperfectos.map(d => {

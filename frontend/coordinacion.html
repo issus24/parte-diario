@@ -23,7 +23,11 @@
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-value" id="stat-sin-asignar">-</div>
-                <div class="stat-label">Sin fecha de ingreso</div>
+                <div class="stat-label">Pend. de ingreso</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-por-confirmar">-</div>
+                <div class="stat-label">Por confirmar</div>
             </div>
             <div class="stat-card">
                 <div class="stat-value" id="stat-en-taller">-</div>
@@ -32,10 +36,6 @@
             <div class="stat-card">
                 <div class="stat-value" id="stat-operativos">-</div>
                 <div class="stat-label">Operativos</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="stat-total">-</div>
-                <div class="stat-label">Total partes</div>
             </div>
         </div>
 
@@ -55,10 +55,9 @@
                             <th>DOMINIO</th>
                             <th>CHOFER</th>
                             <th style="min-width:250px;">PROBLEMAS REPORTADOS</th>
-                            <th>SECTOR</th>
                             <th>FECHA INGRESO</th>
                             <th>ESTADO</th>
-                            <th>ACC.</th>
+                            <th>ACCI&#211;N</th>
                         </tr>
                         <tr class="filter-row">
                             <td></td>
@@ -66,12 +65,12 @@
                             <td></td>
                             <td></td>
                             <td></td>
-                            <td></td>
                             <td>
                                 <select class="filter-input" id="filtro-estado">
                                     <option value="">Todos</option>
-                                    <option value="sin-asignar">Sin asignar</option>
-                                    <option value="asignado">En taller</option>
+                                    <option value="sin-fecha">Sin fecha</option>
+                                    <option value="por-confirmar">Por confirmar</option>
+                                    <option value="en-taller">En taller</option>
                                     <option value="Operativo">Operativo</option>
                                 </select>
                             </td>

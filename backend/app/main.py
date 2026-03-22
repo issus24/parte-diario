@@ -60,6 +60,7 @@ def on_startup():
                 "fecha_ingreso": "DATE",
                 "fecha_probable_fin": "DATE",
                 "chofer_nombre": "VARCHAR(100)",
+                "ingreso_confirmado": "BOOLEAN DEFAULT FALSE",
             }
             for col, col_type in new_cols.items():
                 if col not in existing_cols:
@@ -93,6 +94,7 @@ def on_startup():
         else:
             # Agregar estados nuevos si no existen
             for nombre, resolutivo, color, orden in [
+                ("Pendiente de Ingreso", False, "muted", -1),
                 ("En Espera", False, "orange", 2),
                 ("Operativo", True, "success", 4),
             ]:

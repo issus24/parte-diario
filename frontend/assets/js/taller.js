@@ -53,10 +53,14 @@ async function cargarDatos() {
     }
 }
 
+function enTaller(p) {
+    return p.ingreso_confirmado && p.estado !== 'Operativo' && p.estado !== 'Pendiente de Ingreso';
+}
+
 function filtrarPorTab(datos) {
-    if (tabActual === 'internos') return datos.filter(p => p.fecha_ingreso && p.tipo_taller === 'INTERNO' && p.estado !== 'Operativo');
-    if (tabActual === 'externos') return datos.filter(p => p.fecha_ingreso && p.tipo_taller === 'EXTERNO' && p.estado !== 'Operativo');
-    if (tabActual === 'pendientes') return datos.filter(p => !p.fecha_ingreso && p.estado !== 'Operativo');
+    if (tabActual === 'internos') return datos.filter(p => enTaller(p) && p.tipo_taller === 'INTERNO');
+    if (tabActual === 'externos') return datos.filter(p => enTaller(p) && p.tipo_taller === 'EXTERNO');
+    if (tabActual === 'pendientes') return datos.filter(p => !p.ingreso_confirmado && p.estado !== 'Operativo');
     if (tabActual === 'operativos') return datos.filter(p => p.estado === 'Operativo');
     return datos;
 }
@@ -70,9 +74,9 @@ function actualizarStats() {
 }
 
 function actualizarTabCounts() {
-    const internos = partes.filter(p => p.fecha_ingreso && p.tipo_taller === 'INTERNO' && p.estado !== 'Operativo').length;
-    const externos = partes.filter(p => p.fecha_ingreso && p.tipo_taller === 'EXTERNO' && p.estado !== 'Operativo').length;
-    const pendientes = partes.filter(p => !p.fecha_ingreso && p.estado !== 'Operativo').length;
+    const internos = partes.filter(p => enTaller(p) && p.tipo_taller === 'INTERNO').length;
+    const externos = partes.filter(p => enTaller(p) && p.tipo_taller === 'EXTERNO').length;
+    const pendientes = partes.filter(p => !p.ingreso_confirmado && p.estado !== 'Operativo').length;
     const operativos = partes.filter(p => p.estado === 'Operativo').length;
 
     document.getElementById('tab-count-internos').textContent = internos ? `(${internos})` : '';

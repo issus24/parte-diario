@@ -31,6 +31,7 @@ class Parte(Base):
     estado = Column(String(50), default="Pendiente", nullable=False)
     observaciones = Column(Text, nullable=True)
     fecha_ingreso = Column(Date, nullable=True)
+    ingreso_confirmado = Column(Boolean, default=False, nullable=False)
     fecha_probable_fin = Column(Date, nullable=True)
     alta = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, server_default=func.now(), nullable=False)

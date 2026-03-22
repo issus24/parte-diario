@@ -72,7 +72,7 @@ def crear_parte_chofer(
             operacion="BASE TT",
             tipo_reparacion="RAPIDA",
             tipo_taller="INTERNO",
-            estado="Pendiente",
+            estado="Pendiente de Ingreso",
         )
         db.add(parte)
         db.flush()

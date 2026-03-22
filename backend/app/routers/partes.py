@@ -114,6 +114,7 @@ def listar_partes(
             estado=parte.estado,
             observaciones=parte.observaciones,
             fecha_ingreso=parte.fecha_ingreso,
+            ingreso_confirmado=parte.ingreso_confirmado if hasattr(parte, 'ingreso_confirmado') else False,
             fecha_probable_fin=parte.fecha_probable_fin,
             alta=parte.alta,
             cant_desperfectos=cant_desp or 0,
@@ -193,6 +194,10 @@ def actualizar_parte(parte_id: int, data: ParteUpdate, db: Session = Depends(get
         parte.observaciones = data.observaciones
     if data.fecha_ingreso is not None:
         parte.fecha_ingreso = data.fecha_ingreso
+    if data.ingreso_confirmado is not None:
+        parte.ingreso_confirmado = data.ingreso_confirmado
+        if data.ingreso_confirmado and parte.estado == "Pendiente de Ingreso":
+            parte.estado = "Pendiente"
     if data.fecha_probable_fin is not None:
         parte.fecha_probable_fin = data.fecha_probable_fin
     if data.tipo_taller is not None:
