@@ -1,5 +1,6 @@
 import { getPartes, getParte, getEstados, actualizarParte, actualizarEstadoDesperfecto } from './api.js';
 import { renderPatente } from './patente.js';
+import { esc } from './utils.js';
 
 let partes = [];
 let estadosDisponibles = [];
@@ -137,13 +138,13 @@ function renderTabla() {
                 const sColor = sectorColor(d.sector);
                 const dEstColor = getColorEstado(d.estado);
                 return `<div class="desp-line">
-                    <span class="badge badge-${sColor}">${d.sector}</span>
-                    <span class="badge badge-${dEstColor}">${d.estado}</span>
-                    <span class="desp-desc">${d.descripcion}</span>
+                    <span class="badge badge-${sColor}">${esc(d.sector)}</span>
+                    <span class="badge badge-${dEstColor}">${esc(d.estado)}</span>
+                    <span class="desp-desc">${esc(d.descripcion)}</span>
                 </div>`;
             }).join('');
         } else {
-            novedadHtml = p.novedad || '';
+            novedadHtml = esc(p.novedad);
         }
 
         // Estado del parte con progreso
@@ -171,7 +172,7 @@ function renderTabla() {
             <td class="cell-novedad">${novedadHtml}</td>
             <td>${tallerDisplay}</td>
             <td>${estadoHtml}</td>
-            <td class="cell-wrap text-muted">${p.observaciones || ''}</td>
+            <td class="cell-wrap text-muted">${esc(p.observaciones)}</td>
             <td>
                 <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); abrirEditar(${p.id})">&#9998;</button>
             </td>
@@ -216,9 +217,9 @@ function renderTabletCards(datos) {
                 const sColor = sectorColor(d.sector);
                 const dColor = getColorEstado(d.estado);
                 return `<div class="tcc-desp-row">
-                    <span class="badge badge-${sColor}" style="min-width:85px;justify-content:center;">${d.sector}</span>
-                    <span class="tcc-desp-desc">${d.descripcion}</span>
-                    <span class="badge badge-${dColor}">${d.estado}</span>
+                    <span class="badge badge-${sColor}" style="min-width:85px;justify-content:center;">${esc(d.sector)}</span>
+                    <span class="tcc-desp-desc">${esc(d.descripcion)}</span>
+                    <span class="badge badge-${dColor}">${esc(d.estado)}</span>
                 </div>`;
             }).join('');
         }
@@ -305,7 +306,7 @@ window.abrirEditar = function(parteId) {
                 ).join('');
                 return `<div style="display:flex; align-items:center; gap:0.5rem; padding:0.4rem 0; border-bottom:1px dashed var(--border); flex-wrap:wrap;">
                     <span class="badge badge-${sColor}">${d.sector}</span>
-                    <span style="flex:1; font-size:0.8rem; min-width:120px;">${d.descripcion}</span>
+                    <span style="flex:1; font-size:0.8rem; min-width:120px;">${esc(d.descripcion)}</span>
                     <select class="form-control" style="width:150px; font-size:0.75rem;" onchange="cambiarEstadoDesp(${d.id}, this.value)">${opts}</select>
                 </div>`;
             }).join('')}

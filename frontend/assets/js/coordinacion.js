@@ -1,5 +1,6 @@
 import { getPartes, getParte, crearParte, actualizarParte, getEstados } from './api.js';
 import { renderPatente } from './patente.js';
+import { esc } from './utils.js';
 
 let partes = [];
 let parteSeleccionado = null;
@@ -103,13 +104,13 @@ function renderTabla() {
         if (p._desperfectos && p._desperfectos.length > 0) {
             novedadHtml = p._desperfectos.map(d => {
                 const sColor = sectorColor(d.sector);
-                return `<div class="desp-line"><span class="badge badge-${sColor}">${d.sector}</span><span class="desp-desc">${d.descripcion}</span></div>`;
+                return `<div class="desp-line"><span class="badge badge-${sColor}">${esc(d.sector)}</span><span class="desp-desc">${esc(d.descripcion)}</span></div>`;
             }).join('');
         } else {
             const problemas = (p.novedad || '').split('. ').filter(t => t.trim());
             novedadHtml = problemas.length > 1
-                ? problemas.map(t => `<div class="desp-line">${t.trim()}</div>`).join('')
-                : (p.novedad || '');
+                ? problemas.map(t => `<div class="desp-line">${esc(t.trim())}</div>`).join('')
+                : esc(p.novedad);
         }
 
         // Acción según estado
@@ -125,7 +126,7 @@ function renderTabla() {
 
         return `<tr>
             <td class="text-muted">${num++}</td>
-            <td>${renderPatente(p.dominio)}${p.chofer_nombre ? `<div style="font-size:0.7rem; color:var(--text-muted); margin-top:3px;">${p.chofer_nombre}</div>` : ''}</td>
+            <td>${renderPatente(p.dominio)}${p.chofer_nombre ? `<div style="font-size:0.7rem; color:var(--text-muted); margin-top:3px;">${esc(p.chofer_nombre)}</div>` : ''}</td>
             <td class="cell-novedad">${novedadHtml}</td>
             <td>${fechaIngreso}</td>
             <td>${getEstadoDisplay(p)}</td>
@@ -211,10 +212,10 @@ window.abrirAsignar = function(parteId) {
     if (parteSeleccionado._desperfectos && parteSeleccionado._desperfectos.length > 0) {
         probEl.innerHTML = parteSeleccionado._desperfectos.map(d => {
             const sColor = sectorColor(d.sector);
-            return `<div class="desp-line"><span class="badge badge-${sColor}">${d.sector}</span><span class="desp-desc">${d.descripcion}</span></div>`;
+            return `<div class="desp-line"><span class="badge badge-${sColor}">${esc(d.sector)}</span><span class="desp-desc">${esc(d.descripcion)}</span></div>`;
         }).join('');
     } else {
-        probEl.innerHTML = `<div style="font-size:0.8rem; color:var(--text-secondary);">${parteSeleccionado.novedad || ''}</div>`;
+        probEl.innerHTML = `<div style="font-size:0.8rem; color:var(--text-secondary);">${esc(parteSeleccionado.novedad)}</div>`;
     }
 
     document.getElementById('modal-asignar').classList.add('active');

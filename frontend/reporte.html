@@ -133,16 +133,16 @@
                     const tl = p.tipo_taller === 'EXTERNO' && p.taller_externo ? p.taller_externo : (p.taller_box || '-');
                     const nov = p.desperfectos && p.desperfectos.length > 0
                         ? p.desperfectos.map(d =>
-                            `<div class="d-row"><span class="badge badge-${sc(d.sector)}">${d.sector}</span><span class="badge badge-${ec(d.estado)} d-est">${d.estado}</span><span class="d-txt">${d.descripcion}</span></div>`
+                            `<div class="d-row"><span class="badge badge-${sc(d.sector)}">${esc(d.sector)}</span><span class="badge badge-${ec(d.estado)} d-est">${esc(d.estado)}</span><span class="d-txt">${esc(d.descripcion)}</span></div>`
                         ).join('')
-                        : `<span class="d-txt">${p.novedad || '-'}</span>`;
+                        : `<span class="d-txt">${esc(p.novedad) || '-'}</span>`;
                     return `<tr>
                         <td class="fch">${fi}</td>
-                        <td class="dom">${p.dominio}</td>
+                        <td class="dom">${esc(p.dominio)}</td>
                         <td>${nov}</td>
                         <td style="font-size:0.65rem;">${tl}</td>
                         <td><span class="badge badge-${ec(p.estado)}" style="font-size:0.5rem;">${p.estado}</span></td>
-                        ${conObs ? `<td class="obs">${p.observaciones || ''}</td>` : ''}
+                        ${conObs ? `<td class="obs">${esc(p.observaciones)}</td>` : ''}
                     </tr>`;
                 }).join('');
             }
@@ -159,6 +159,7 @@
             </div>`;
         }
 
+        function esc(str) { if (!str) return ''; return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
         function sc(s) { return { 'MECANICA':'info','ELECTRICIDAD':'warning','HERRERIA':'muted','GOMERIA':'success','LAVADERO':'primary' }[(s||'').toUpperCase()] || 'muted'; }
         function ec(e) { return { 'Pendiente':'warning','Pendiente de Ingreso':'muted','En Proceso':'info','En Espera':'orange','Reparado':'success','Operativo':'success','No Aplica':'muted' }[e] || 'muted'; }
         function fmtCorta(d) { return new Date(d+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}); }
