@@ -111,6 +111,9 @@ function renderTabla() {
 
     document.getElementById('tabla-count').textContent = `${datos.length} unidades`;
 
+    // Render tablet cards
+    renderTabletCards(datos);
+
     if (datos.length === 0) {
         tbody.innerHTML = '<tr><td colspan="11" class="empty-state"><p>Sin datos</p></td></tr>';
         return;
@@ -181,6 +184,103 @@ function formatFecha(dateStr) {
     return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
+function renderTabletCards(datos) {
+    const container = document.getElementById('tablet-cards');
+    if (!container) return;
+
+    if (datos.length === 0) {
+        container.innerHTML = '<div class="empty-state"><p>Sin datos</p></div>';
+        return;
+    }
+
+    container.innerHTML = datos.map(p => {
+        const colorEstado = getColorEstado(p.estado);
+        const tipoRepBadge = p.tipo_reparacion === 'PROFUNDA' ? 'danger'
+            : p.tipo_reparacion === 'LENTA' ? 'warning' : 'info';
+        const fechaIngreso = p.fecha_ingreso ? formatFecha(p.fecha_ingreso) : 'Sin asignar';
+        const tallerDisplay = p.tipo_taller === 'EXTERNO' && p.taller_externo
+            ? p.taller_externo : (p.taller_box || '-');
+
+        // Progreso
+        let progreso = '';
+        if (p._desperfectos && p._desperfectos.length > 0) {
+            const total = p._desperfectos.length;
+            const resueltos = p._desperfectos.filter(d => esResolutivo(d.estado)).length;
+            progreso = `${resueltos}/${total}`;
+        }
+
+        // Desperfectos con selects
+        let despHtml = '';
+        if (p._desperfectos && p._desperfectos.length > 0) {
+            despHtml = `<div class="tablet-card-desp">
+                ${p._desperfectos.map(d => {
+                    const sColor = sectorColor(d.sector);
+                    const opts = estadosDisponibles.map(e =>
+                        `<option value="${e.nombre}" ${e.nombre === d.estado ? 'selected' : ''}>${e.nombre}</option>`
+                    ).join('');
+                    return `<div class="tablet-desp-item">
+                        <div class="tablet-desp-info">
+                            <span class="badge badge-${sColor}">${d.sector}</span>
+                            <div style="margin-top:0.2rem;">${d.descripcion}</div>
+                        </div>
+                        <select onchange="cambiarEstadoDesp(${d.id}, this.value)">${opts}</select>
+                    </div>`;
+                }).join('')}
+            </div>`;
+        }
+
+        return `<div class="tablet-card">
+            <div class="tablet-card-header">
+                <div>
+                    <span class="dominio">${p.dominio}</span>
+                    <span class="badge badge-${tipoRepBadge}" style="margin-left:0.5rem;">${p.tipo_reparacion}</span>
+                    <span class="badge badge-${colorEstado}" style="margin-left:0.25rem;">${p.estado}</span>
+                    ${progreso ? `<span style="font-size:0.75rem; color:var(--text-muted); margin-left:0.5rem;">${progreso}</span>` : ''}
+                </div>
+                <div class="meta">
+                    ${fechaIngreso}<br>${p.n_parte}
+                </div>
+            </div>
+            <div class="tablet-card-body">
+                <div class="tablet-card-row">
+                    <span class="label">Taller</span>
+                    <span>${tallerDisplay}</span>
+                </div>
+                ${p.observaciones ? `<div class="tablet-card-row">
+                    <span class="label">Obs.</span>
+                    <span style="color:var(--text-secondary);">${p.observaciones}</span>
+                </div>` : ''}
+            </div>
+            ${despHtml}
+            <div class="tablet-card-footer">
+                <button class="btn btn-outline" onclick="abrirEditar(${p.id})">&#9998; Editar</button>
+                <button class="btn btn-outline" onclick="editarObsTablet(${p.id})">&#128221; Observaciones</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+window.editarObsTablet = async function(parteId) {
+    const parte = partes.find(p => p.id === parteId);
+    const obs = prompt('Observaciones:', parte?.observaciones || '');
+    if (obs === null) return;
+    try {
+        await actualizarParte(parteId, { observaciones: obs });
+        await cargarDatos();
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
+};
+
+window.cambiarEstadoDesp = async function(despId, nuevoEstado) {
+    try {
+        await actualizarEstadoDesperfecto(despId, nuevoEstado);
+        await cargarDatos();
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
+};
+
 // --- TABS ---
 window.cambiarTab = function(tab) {
     tabActual = tab;
@@ -240,19 +340,6 @@ window.abrirEditar = function(parteId) {
     document.getElementById('modal-editar').classList.add('active');
 };
 
-window.cambiarEstadoDesp = async function(despId, nuevoEstado) {
-    try {
-        await actualizarEstadoDesperfecto(despId, nuevoEstado);
-        await cargarDatos();
-        // Re-abrir modal con datos actualizados
-        if (parteEditando) {
-            const updated = partes.find(p => p.id === parteEditando.id);
-            if (updated) abrirEditar(updated.id);
-        }
-    } catch (err) {
-        alert('Error: ' + err.message);
-    }
-};
 
 window.guardarEdicion = async function() {
     if (!parteEditando) return;
