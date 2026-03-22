@@ -211,7 +211,7 @@ textarea.form-control { resize: vertical; min-height: 60px; }
 }
 
 /* --- TABLE --- */
-.table-wrapper { overflow-x: auto; }
+.table-wrapper { overflow-x: auto; width: 100%; }
 
 table { width: 100%; border-collapse: collapse; }
 
@@ -231,7 +231,10 @@ table th {
     background: var(--bg-card);
     position: sticky;
     top: 0;
+    white-space: nowrap;
 }
+
+th.col-expand { white-space: normal; }
 
 table tbody tr:hover { background: var(--bg-card-hover); }
 
@@ -241,13 +244,7 @@ table tbody tr:hover { background: var(--bg-card-hover); }
     line-height: 1.4;
 }
 
-table { table-layout: fixed; width: 100%; }
-
-/* Columns that should expand to fill available space */
-th.col-expand, td.col-expand { width: auto; }
-
-/* Compact columns shrink to content */
-th:not(.col-expand) { white-space: nowrap; width: 1%; }
+table { width: 100%; }
 
 .desp-line {
     padding: 0.2rem 0;
