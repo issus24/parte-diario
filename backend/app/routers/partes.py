@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func, case
+from sqlalchemy import func, case, and_
 from typing import Optional
-from datetime import date
+from datetime import date, datetime, timedelta
 
 from app.core.database import get_db
 from app.models import Parte, Desperfecto, Estado
@@ -229,3 +229,76 @@ def eliminar_parte(parte_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Parte no encontrado")
     db.delete(parte)
     db.commit()
+
+
+@router.get("/reporte/diario")
+def reporte_diario(fecha: Optional[date] = None, db: Session = Depends(get_db)):
+    """Genera reporte del parte diario para una fecha."""
+    if not fecha:
+        fecha = date.today()
+
+    inicio = datetime.combine(fecha, datetime.min.time())
+    fin = datetime.combine(fecha + timedelta(days=1), datetime.min.time())
+
+    # Partes ingresados hoy
+    ingresados = db.query(Parte).options(joinedload(Parte.desperfectos)).filter(
+        Parte.fecha_ingreso == fecha
+    ).all()
+
+    # Desperfectos actualizados hoy
+    desperfectos_hoy = db.query(Desperfecto).filter(
+        and_(Desperfecto.updated_at >= inicio, Desperfecto.updated_at < fin)
+    ).all()
+
+    # IDs de partes con actividad hoy
+    partes_con_actividad_ids = {d.parte_id for d in desperfectos_hoy}
+
+    # Partes con actividad (excluyendo los ya listados en ingresados)
+    ingresados_ids = {p.id for p in ingresados}
+    partes_actividad = db.query(Parte).options(joinedload(Parte.desperfectos)).filter(
+        Parte.id.in_(partes_con_actividad_ids - ingresados_ids)
+    ).all() if (partes_con_actividad_ids - ingresados_ids) else []
+
+    # Partes dados de alta hoy
+    operativos_hoy = db.query(Parte).options(joinedload(Parte.desperfectos)).filter(
+        and_(Parte.updated_at >= inicio, Parte.updated_at < fin, Parte.estado == "Operativo")
+    ).all()
+    operativos_ids = {p.id for p in operativos_hoy}
+
+    # Estadísticas
+    estados_resolutivos = {e.nombre for e in db.query(Estado).filter(Estado.es_resolutivo == True).all()}
+    total_desp_resueltos = sum(1 for d in desperfectos_hoy if d.estado in estados_resolutivos)
+
+    def parte_to_dict(p):
+        return {
+            "id": p.id,
+            "n_parte": p.n_parte,
+            "dominio": p.dominio,
+            "chofer_nombre": p.chofer_nombre,
+            "taller_box": p.taller_box,
+            "tipo_taller": p.tipo_taller,
+            "taller_externo": p.taller_externo,
+            "estado": p.estado,
+            "novedad": p.novedad,
+            "observaciones": p.observaciones,
+            "desperfectos": [{
+                "id": d.id,
+                "sector": d.sector,
+                "descripcion": d.descripcion,
+                "estado": d.estado,
+            } for d in p.desperfectos],
+        }
+
+    return {
+        "fecha": fecha.isoformat(),
+        "stats": {
+            "ingresados": len(ingresados),
+            "con_actividad": len(partes_actividad) + len(ingresados),
+            "operativos_hoy": len(operativos_hoy),
+            "desperfectos_resueltos": total_desp_resueltos,
+            "desperfectos_trabajados": len(desperfectos_hoy),
+        },
+        "ingresados": [parte_to_dict(p) for p in ingresados],
+        "actividad": [parte_to_dict(p) for p in partes_actividad],
+        "operativos": [parte_to_dict(p) for p in operativos_hoy if p.id not in ingresados_ids],
+    }

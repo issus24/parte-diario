@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0f1117">
+    <title>Reporte Diario - Parte Diario</title>
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    <style>
+        .reporte-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+        .reporte-title { font-size: 1.2rem; font-weight: 700; }
+        .reporte-fecha {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .reporte-actions { display: flex; gap: 0.5rem; }
+
+        .reporte-section {
+            margin-bottom: 1.5rem;
+        }
+        .reporte-section-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.3rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .reporte-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 0.5rem;
+            overflow: hidden;
+        }
+        .reporte-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            background: rgba(255,255,255,0.02);
+            border-bottom: 1px solid var(--border);
+        }
+        .reporte-card-header .dominio {
+            font-weight: 700;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+        .reporte-card-body {
+            padding: 0.25rem 0;
+        }
+
+        .reporte-empty {
+            text-align: center;
+            padding: 1.5rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        /* Print styles */
+        @media print {
+            body { background: #fff; color: #000; font-size: 11px; }
+            .navbar, .reporte-actions, .reporte-fecha input, .btn { display: none !important; }
+            .container { padding: 0; max-width: 100%; }
+            .stats-grid { grid-template-columns: repeat(4, 1fr); }
+            .stat-card { border: 1px solid #ccc; background: #f9f9f9; }
+            .stat-card .stat-value { color: #000; }
+            .stat-card .stat-label { color: #666; }
+            .reporte-card { border: 1px solid #ddd; break-inside: avoid; }
+            .reporte-card-header { background: #f0f0f0; }
+            .badge { border: 1px solid #ccc; }
+            .desp-line { border-bottom-color: #eee; }
+            .reporte-section-title { color: #000; border-bottom-color: #ccc; }
+            .reporte-title::after { content: " - Logiteck"; }
+            .print-fecha { display: block !important; font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+        }
+        .print-fecha { display: none; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1>&#128668; Parte Diario</h1>
+        <div class="navbar-links">
+            <a href="/">Inicio</a>
+            <a href="/coordinacion.html">Coordinacion</a>
+            <a href="/taller.html">Taller</a>
+            <a href="/reporte.html" class="active">Reporte</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="reporte-header">
+            <div>
+                <div class="reporte-title">Reporte Parte Diario</div>
+                <div class="print-fecha" id="print-fecha"></div>
+            </div>
+            <div class="reporte-fecha">
+                <input type="date" class="form-control" id="inp-fecha" style="width:170px;">
+                <button class="btn btn-primary" onclick="cargarReporte()">Generar</button>
+            </div>
+            <div class="reporte-actions">
+                <button class="btn btn-outline" onclick="window.print()">&#128424; Imprimir</button>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid" id="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="stat-ingresados">-</div>
+                <div class="stat-label">Ingresados</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-actividad">-</div>
+                <div class="stat-label">Con actividad</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-resueltos">-</div>
+                <div class="stat-label">Desp. resueltos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-operativos">-</div>
+                <div class="stat-label">Dados de alta</div>
+            </div>
+        </div>
+
+        <div id="reporte-content">
+            <div class="reporte-empty">Selecciona una fecha y presiona Generar</div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { renderPatente } from '/assets/js/patente.js';
+
+        const inp = document.getElementById('inp-fecha');
+        inp.value = new Date().toISOString().split('T')[0];
+
+        // Auto-cargar al abrir
+        cargarReporte();
+
+        window.cargarReporte = cargarReporte;
+
+        async function cargarReporte() {
+            const fecha = inp.value;
+            if (!fecha) return;
+
+            document.getElementById('print-fecha').textContent = formatFechaLarga(fecha);
+
+            try {
+                const res = await fetch(`/api/partes/reporte/diario?fecha=${fecha}`);
+                if (!res.ok) throw new Error('Error');
+                const data = await res.json();
+                renderReporte(data);
+            } catch (err) {
+                document.getElementById('reporte-content').innerHTML =
+                    '<div class="reporte-empty">Error al cargar reporte</div>';
+            }
+        }
+
+        function renderReporte(data) {
+            // Stats
+            document.getElementById('stat-ingresados').textContent = data.stats.ingresados;
+            document.getElementById('stat-actividad').textContent = data.stats.con_actividad;
+            document.getElementById('stat-resueltos').textContent = data.stats.desperfectos_resueltos;
+            document.getElementById('stat-operativos').textContent = data.stats.operativos_hoy;
+
+            const container = document.getElementById('reporte-content');
+            let html = '';
+
+            // Sección: Ingresados
+            if (data.ingresados.length > 0) {
+                html += `<div class="reporte-section">
+                    <div class="reporte-section-title">&#128666; Unidades ingresadas (${data.ingresados.length})</div>
+                    ${data.ingresados.map(p => renderParteCard(p)).join('')}
+                </div>`;
+            }
+
+            // Sección: Actividad
+            if (data.actividad.length > 0) {
+                html += `<div class="reporte-section">
+                    <div class="reporte-section-title">&#128295; Trabajos realizados (${data.actividad.length})</div>
+                    ${data.actividad.map(p => renderParteCard(p)).join('')}
+                </div>`;
+            }
+
+            // Sección: Operativos
+            if (data.operativos.length > 0) {
+                html += `<div class="reporte-section">
+                    <div class="reporte-section-title">&#9989; Dados de alta (${data.operativos.length})</div>
+                    ${data.operativos.map(p => renderParteCard(p)).join('')}
+                </div>`;
+            }
+
+            if (!html) {
+                html = '<div class="reporte-empty">No hay actividad registrada para esta fecha</div>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        function renderParteCard(p) {
+            const taller = p.tipo_taller === 'EXTERNO' && p.taller_externo
+                ? p.taller_externo : (p.taller_box || '');
+
+            const despHtml = p.desperfectos.map(d => {
+                const sColor = sectorColor(d.sector);
+                const dColor = estadoColor(d.estado);
+                return `<div class="desp-line">
+                    <span class="badge badge-${sColor}">${d.sector}</span>
+                    <span class="badge badge-${dColor}">${d.estado}</span>
+                    <span class="desp-desc">${d.descripcion}</span>
+                </div>`;
+            }).join('');
+
+            const estadoBadge = estadoColor(p.estado);
+
+            return `<div class="reporte-card">
+                <div class="reporte-card-header">
+                    <div style="display:flex; align-items:center; gap:0.5rem;">
+                        ${renderPatente(p.dominio)}
+                        ${p.chofer_nombre ? `<span style="color:var(--text-muted); font-size:0.75rem;">${p.chofer_nombre}</span>` : ''}
+                    </div>
+                    <div style="display:flex; align-items:center; gap:0.5rem;">
+                        ${taller ? `<span style="font-size:0.75rem; color:var(--text-muted);">${taller}</span>` : ''}
+                        <span class="badge badge-${estadoBadge}">${p.estado}</span>
+                    </div>
+                </div>
+                <div class="reporte-card-body">${despHtml}</div>
+                ${p.observaciones ? `<div style="padding:0.3rem 0.75rem 0.4rem; font-size:0.7rem; color:var(--text-muted); border-top:1px solid var(--border);">&#128221; ${p.observaciones}</div>` : ''}
+            </div>`;
+        }
+
+        function sectorColor(sector) {
+            const map = { 'MECANICA': 'info', 'ELECTRICIDAD': 'warning', 'HERRERIA': 'muted', 'GOMERIA': 'success', 'LAVADERO': 'primary' };
+            return map[(sector || '').toUpperCase()] || 'muted';
+        }
+
+        function estadoColor(estado) {
+            const map = { 'Pendiente': 'warning', 'Pendiente de Ingreso': 'muted', 'En Proceso': 'info', 'En Espera': 'orange', 'Esperando Repuesto': 'orange', 'Reparado': 'success', 'Operativo': 'success', 'No Aplica': 'muted' };
+            return map[estado] || 'muted';
+        }
+
+        function formatFechaLarga(dateStr) {
+            const d = new Date(dateStr + 'T12:00:00');
+            const opciones = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+            let texto = d.toLocaleDateString('es-AR', opciones);
+            return texto.charAt(0).toUpperCase() + texto.slice(1);
+        }
+    </script>
+</body>
+</html>
