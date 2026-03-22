@@ -5,7 +5,7 @@ import os
 
 class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/parte_diario"
-    CORS_ORIGINS: str = "http://localhost:3001,http://127.0.0.1:3001"
+    CORS_ORIGINS: str = "http://localhost:3001,http://127.0.0.1:3001,https://web-production-58079.up.railway.app"
     PORT: int = 3001
     GOOGLE_SHEETS_CREDENTIALS: str = "credentials.json"
     GOOGLE_SHEET_ID: str = ""
