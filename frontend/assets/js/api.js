@@ -4,13 +4,14 @@ const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL || "";
 // --- PARTES ---
 
 export async function getPartes(params = {}) {
-    const url = new URL(`${API_BASE_URL}/api/partes`);
+    const query = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
         if (value !== "" && value !== null && value !== undefined) {
-            url.searchParams.append(key, value);
+            query.append(key, value);
         }
     });
-    const res = await fetch(url.toString());
+    const qs = query.toString();
+    const res = await fetch(`${API_BASE_URL}/api/partes${qs ? '?' + qs : ''}`);
     if (!res.ok) throw new Error(`Error ${res.status}`);
     return res.json();
 }
