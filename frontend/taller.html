@@ -17,45 +17,53 @@
     </nav>
 
     <div class="container">
-        <!-- Navegacion por fecha -->
-        <div class="fecha-nav">
-            <button class="btn btn-outline btn-nav" onclick="cambiarFecha(-1)">&#9664;</button>
-            <div class="fecha-display" id="fecha-display"></div>
-            <button class="btn btn-outline btn-nav" onclick="cambiarFecha(1)">&#9654;</button>
-            <button class="btn btn-outline btn-sm" onclick="irAHoy()">Hoy</button>
-        </div>
-
-        <!-- Stats del dia -->
+        <!-- Stats -->
         <div class="stats-grid" id="stats-taller">
             <div class="stat-card">
-                <div class="stat-value" id="stat-vehiculos">-</div>
-                <div class="stat-label">Vehiculos citados</div>
+                <div class="stat-value" id="stat-total">-</div>
+                <div class="stat-label">Unidades en taller</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value" id="stat-desperfectos">-</div>
-                <div class="stat-label">Desperfectos</div>
+                <div class="stat-value" id="stat-pendientes">-</div>
+                <div class="stat-label">Pendientes</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value" id="stat-resueltos">-</div>
-                <div class="stat-label">Resueltos</div>
+                <div class="stat-value" id="stat-en-proceso">-</div>
+                <div class="stat-label">En proceso</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value" id="stat-altas">-</div>
-                <div class="stat-label">Con alta</div>
+                <div class="stat-value" id="stat-operativos">-</div>
+                <div class="stat-label">Operativos hoy</div>
             </div>
         </div>
 
-        <!-- Vehiculos del dia -->
-        <div id="vehiculos-container">
+        <!-- Filtros -->
+        <div class="page-header">
+            <h2 class="page-title">Parte Diario de Taller</h2>
+            <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                <input type="text" class="form-control" id="filtro-dominio" placeholder="Buscar dominio..." style="width:180px;">
+                <select class="form-control" id="filtro-taller-box" style="width:160px;">
+                    <option value="">Todos los sectores</option>
+                    <option value="MECANICA">Mecanica</option>
+                    <option value="ELECTRICIDAD">Electricidad</option>
+                    <option value="HERRERIA">Herreria</option>
+                    <option value="CHAPA/PINTURA">Chapa/Pintura</option>
+                    <option value="GOMERIA">Gomeria</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Unidades activas -->
+        <div id="unidades-container">
             <div class="loading-center"><div class="spinner"></div></div>
         </div>
 
-        <!-- Otros pendientes -->
+        <!-- Operativos del dia -->
         <div style="margin-top: 2rem;">
-            <button class="btn btn-outline" onclick="togglePendientes()" id="btn-pendientes" style="display:none;">
-                &#9660; Ver otros partes pendientes
+            <button class="btn btn-outline" onclick="toggleOperativos()" id="btn-operativos" style="display:none;">
+                &#9660; Ver unidades operativas
             </button>
-            <div id="otros-pendientes" style="display:none; margin-top:1rem;"></div>
+            <div id="operativos-container" style="display:none; margin-top:1rem;"></div>
         </div>
     </div>
 

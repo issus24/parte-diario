@@ -20,7 +20,6 @@ def actualizar_estado(
     if not desperfecto:
         raise HTTPException(status_code=404, detail="Desperfecto no encontrado")
 
-    # Validar que el estado exista
     estado = db.query(Estado).filter(Estado.nombre == data.estado).first()
     if not estado:
         raise HTTPException(status_code=400, detail=f"Estado '{data.estado}' no existe")
@@ -32,7 +31,6 @@ def actualizar_estado(
     db.commit()
     db.refresh(desperfecto)
 
-    # Recalcular alta del parte
     recalcular_alta(db, desperfecto.parte_id)
 
     return desperfecto

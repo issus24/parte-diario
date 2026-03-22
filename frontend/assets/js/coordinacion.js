@@ -1,13 +1,26 @@
-import { getPartes, crearParte, asignarFechaCitacion } from './api.js';
+import { getPartes, crearParte, actualizarParte, getEstados } from './api.js';
 
 let partes = [];
-let parteSeleccionado = null;
-let desperfectosNuevo = [];
+let estadosDisponibles = [];
+let parteEditando = null;
+let tabActual = 'todos';
 
 // --- INIT ---
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        estadosDisponibles = await getEstados();
+    } catch (err) {
+        console.error('Error cargando estados:', err);
+    }
+
+    // Fecha ingreso default = hoy
+    document.getElementById('nuevo-fecha-ingreso').value = new Date().toISOString().split('T')[0];
+
+    document.getElementById('filtro-dominio').addEventListener('input', renderTabla);
+    document.getElementById('filtro-tipo-taller').addEventListener('change', renderTabla);
+    document.getElementById('filtro-estado').addEventListener('change', renderTabla);
+
     cargarPartes();
-    document.getElementById('filtro-patente').addEventListener('input', renderTabla);
 });
 
 async function cargarPartes() {
@@ -18,156 +31,189 @@ async function cargarPartes() {
     } catch (err) {
         console.error('Error cargando partes:', err);
         document.getElementById('tabla-partes').innerHTML =
-            '<tr><td colspan="8" class="empty-state"><p>Error al cargar datos</p></td></tr>';
+            '<tr><td colspan="9" class="empty-state"><p>Error al cargar datos</p></td></tr>';
     }
 }
 
 function actualizarStats() {
-    const hoy = new Date().toISOString().split('T')[0];
-    const sinCitar = partes.filter(p => !p.fecha_citacion && !p.alta).length;
-    const citadosHoy = partes.filter(p => p.fecha_citacion === hoy).length;
-    const enTaller = partes.filter(p => p.fecha_citacion && !p.alta).length;
-    const conAlta = partes.filter(p => p.alta).length;
+    const pendientes = partes.filter(p => p.estado === 'Pendiente').length;
+    const enProceso = partes.filter(p => p.estado === 'En Proceso').length;
+    const enEspera = partes.filter(p => p.estado === 'En Espera' || p.estado === 'Esperando Repuesto').length;
+    const operativos = partes.filter(p => p.estado === 'Operativo').length;
 
-    document.getElementById('stat-sin-citar').textContent = sinCitar;
-    document.getElementById('stat-citados-hoy').textContent = citadosHoy;
-    document.getElementById('stat-en-taller').textContent = enTaller;
-    document.getElementById('stat-con-alta').textContent = conAlta;
+    document.getElementById('stat-pendientes').textContent = pendientes;
+    document.getElementById('stat-en-proceso').textContent = enProceso;
+    document.getElementById('stat-en-espera').textContent = enEspera;
+    document.getElementById('stat-operativos').textContent = operativos;
 }
 
 function renderTabla() {
-    const filtro = document.getElementById('filtro-patente').value.toUpperCase();
+    const filtroDominio = document.getElementById('filtro-dominio').value.toUpperCase();
+    const filtroTipo = document.getElementById('filtro-tipo-taller').value;
+    const filtroEstado = document.getElementById('filtro-estado').value;
     const tbody = document.getElementById('tabla-partes');
 
     let datos = partes;
-    if (filtro) {
-        datos = datos.filter(p => p.patente.toUpperCase().includes(filtro));
-    }
+
+    // Filtro por tab
+    if (tabActual === 'internos') datos = datos.filter(p => p.tipo_taller === 'INTERNO' && p.estado !== 'Operativo');
+    else if (tabActual === 'externos') datos = datos.filter(p => p.tipo_taller === 'EXTERNO' && p.estado !== 'Operativo');
+    else if (tabActual === 'operativos') datos = datos.filter(p => p.estado === 'Operativo');
+    else datos = datos.filter(p => p.estado !== 'Operativo'); // tab "todos" muestra no-operativos
+
+    // Filtros adicionales
+    if (filtroDominio) datos = datos.filter(p => p.dominio.toUpperCase().includes(filtroDominio));
+    if (filtroTipo) datos = datos.filter(p => p.tipo_taller === filtroTipo);
+    if (filtroEstado) datos = datos.filter(p => p.estado === filtroEstado);
 
     if (datos.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><p>No hay partes</p></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><p>No hay unidades</p></td></tr>';
         return;
     }
 
     tbody.innerHTML = datos.map(p => {
-        const estado = getEstadoGeneral(p);
-        const fechaCarga = new Date(p.fecha_carga).toLocaleDateString('es-AR');
-        const fechaCitacion = p.fecha_citacion
-            ? new Date(p.fecha_citacion + 'T12:00:00').toLocaleDateString('es-AR')
+        const colorEstado = getColorEstado(p.estado);
+        const fechaIngreso = p.fecha_ingreso
+            ? new Date(p.fecha_ingreso + 'T12:00:00').toLocaleDateString('es-AR')
             : '-';
+        const fechaFin = p.fecha_probable_fin
+            ? new Date(p.fecha_probable_fin + 'T12:00:00').toLocaleDateString('es-AR')
+            : '-';
+        const tallerDisplay = p.tipo_taller === 'EXTERNO' && p.taller_externo
+            ? p.taller_externo
+            : (p.taller_box || '-');
+        const tipoRepBadge = p.tipo_reparacion === 'PROFUNDA' ? 'danger'
+            : p.tipo_reparacion === 'LENTA' ? 'warning' : 'info';
+        const novedadCorta = p.novedad && p.novedad.length > 60
+            ? p.novedad.substring(0, 60) + '...'
+            : (p.novedad || '-');
 
         return `<tr>
             <td><strong>${p.n_parte}</strong></td>
-            <td style="font-family:monospace; font-weight:600;">${p.patente}</td>
-            <td>${p.chofer}</td>
-            <td>${p.cant_resueltos}/${p.cant_desperfectos}</td>
-            <td>${fechaCarga}</td>
-            <td>${fechaCitacion}</td>
-            <td><span class="badge badge-${estado.color}">${estado.label}</span></td>
+            <td style="font-family:monospace; font-weight:600;">${p.dominio}</td>
+            <td title="${(p.novedad || '').replace(/"/g, '&quot;')}" style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${novedadCorta}</td>
+            <td>${tallerDisplay}</td>
+            <td><span class="badge badge-${tipoRepBadge}">${p.tipo_reparacion}</span></td>
+            <td>${fechaIngreso}</td>
+            <td>${fechaFin}</td>
+            <td><span class="badge badge-${colorEstado}">${p.estado}</span></td>
             <td>
-                <button class="btn btn-outline btn-sm" onclick="abrirModalFecha(${p.id})">
-                    ${p.fecha_citacion ? '&#9998; Editar' : '&#128197; Citar'}
-                </button>
+                <button class="btn btn-outline btn-sm" onclick="abrirEditar(${p.id})">&#9998; Ver</button>
             </td>
         </tr>`;
     }).join('');
 }
 
-function getEstadoGeneral(parte) {
-    if (parte.alta) return { label: 'Alta', color: 'success' };
-    if (!parte.fecha_citacion) return { label: 'Sin citar', color: 'warning' };
-    if (parte.cant_resueltos > 0 && parte.cant_resueltos < parte.cant_desperfectos) {
-        return { label: 'En proceso', color: 'info' };
-    }
-    return { label: 'Citado', color: 'primary' };
+function getColorEstado(estado) {
+    const e = estadosDisponibles.find(s => s.nombre === estado);
+    return e ? e.color : 'muted';
 }
 
-// --- MODAL FECHA ---
-window.abrirModalFecha = function(parteId) {
-    parteSeleccionado = partes.find(p => p.id === parteId);
-    if (!parteSeleccionado) return;
-
-    document.getElementById('modal-fecha-nparte').textContent = parteSeleccionado.n_parte;
-    document.getElementById('modal-fecha-patente').textContent = parteSeleccionado.patente;
-    document.getElementById('input-fecha-citacion').value = parteSeleccionado.fecha_citacion || '';
-    document.getElementById('modal-fecha').classList.add('active');
+// --- TABS ---
+window.cambiarTab = function(tab) {
+    tabActual = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+    renderTabla();
 };
 
-window.guardarFechaCitacion = async function() {
-    if (!parteSeleccionado) return;
-    const fecha = document.getElementById('input-fecha-citacion').value;
-    if (!fecha) return alert('Selecciona una fecha');
-
-    try {
-        await asignarFechaCitacion(parteSeleccionado.id, fecha);
-        cerrarModal('modal-fecha');
-        await cargarPartes();
-    } catch (err) {
-        alert('Error al guardar: ' + err.message);
-    }
-};
-
-// --- MODAL NUEVO PARTE ---
-window.abrirModalNuevoParte = function() {
-    desperfectosNuevo = [];
-    document.getElementById('nuevo-patente').value = '';
-    document.getElementById('nuevo-chofer').value = '';
-    document.getElementById('nuevo-km').value = '';
-    document.getElementById('nuevo-descripcion').value = '';
-    renderDesperfectosNuevo();
+// --- MODAL NUEVO ---
+window.abrirModalNuevo = function() {
+    document.getElementById('nuevo-dominio').value = '';
+    document.getElementById('nuevo-operacion').value = 'BASE TT';
+    document.getElementById('nuevo-tipo-rep').value = 'RAPIDA';
+    document.getElementById('nuevo-tipo-taller').value = 'INTERNO';
+    document.getElementById('nuevo-taller-box').value = 'MECANICA';
+    document.getElementById('nuevo-taller-externo').value = '';
+    document.getElementById('nuevo-fecha-ingreso').value = new Date().toISOString().split('T')[0];
+    document.getElementById('nuevo-fecha-fin').value = '';
+    document.getElementById('nuevo-novedad').value = '';
+    document.getElementById('nuevo-observaciones').value = '';
+    toggleTallerExterno();
     document.getElementById('modal-nuevo').classList.add('active');
 };
 
-window.agregarDesperfectoNuevo = function() {
-    const sector = document.getElementById('nuevo-sector').value;
-    const descripcion = document.getElementById('nuevo-descripcion').value.trim();
-    if (!descripcion) return alert('Ingresa una descripcion');
-
-    desperfectosNuevo.push({ sector, descripcion });
-    document.getElementById('nuevo-descripcion').value = '';
-    renderDesperfectosNuevo();
+window.toggleTallerExterno = function() {
+    const tipo = document.getElementById('nuevo-tipo-taller').value;
+    document.getElementById('grupo-taller-externo').style.display = tipo === 'EXTERNO' ? 'block' : 'none';
 };
 
-function renderDesperfectosNuevo() {
-    const container = document.getElementById('lista-desperfectos-nuevo');
-    if (desperfectosNuevo.length === 0) {
-        container.innerHTML = '<p style="color:var(--text-secondary); font-size:0.85rem; margin-bottom:0.75rem;">No hay desperfectos agregados</p>';
-        return;
-    }
-    container.innerHTML = desperfectosNuevo.map((d, i) => `
-        <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem; padding:0.4rem 0.6rem; background:var(--muted-light); border-radius:var(--radius);">
-            <span class="badge badge-${d.sector.toLowerCase()}">${d.sector}</span>
-            <span style="flex:1; font-size:0.85rem;">${d.descripcion}</span>
-            <button class="btn btn-sm" onclick="quitarDesperfectoNuevo(${i})" style="color:var(--danger); padding:0.2rem;">&times;</button>
-        </div>
-    `).join('');
-}
+window.guardarNuevo = async function() {
+    const dominio = document.getElementById('nuevo-dominio').value.trim();
+    const novedad = document.getElementById('nuevo-novedad').value.trim();
 
-window.quitarDesperfectoNuevo = function(index) {
-    desperfectosNuevo.splice(index, 1);
-    renderDesperfectosNuevo();
-};
+    if (!dominio) return alert('Ingresa el dominio');
+    if (!novedad) return alert('Ingresa la novedad');
 
-window.guardarNuevoParte = async function() {
-    const patente = document.getElementById('nuevo-patente').value.trim();
-    const chofer = document.getElementById('nuevo-chofer').value.trim();
-    const km = document.getElementById('nuevo-km').value;
-
-    if (!patente) return alert('Ingresa la patente');
-    if (!chofer) return alert('Ingresa el chofer');
-    if (desperfectosNuevo.length === 0) return alert('Agrega al menos un desperfecto');
+    const data = {
+        dominio,
+        operacion: document.getElementById('nuevo-operacion').value.trim() || 'BASE TT',
+        tipo_reparacion: document.getElementById('nuevo-tipo-rep').value,
+        tipo_taller: document.getElementById('nuevo-tipo-taller').value,
+        taller_externo: document.getElementById('nuevo-taller-externo').value.trim() || null,
+        taller_box: document.getElementById('nuevo-taller-box').value,
+        novedad,
+        observaciones: document.getElementById('nuevo-observaciones').value.trim() || null,
+        fecha_ingreso: document.getElementById('nuevo-fecha-ingreso').value || null,
+        fecha_probable_fin: document.getElementById('nuevo-fecha-fin').value || null,
+    };
 
     try {
-        await crearParte({
-            patente,
-            chofer,
-            km: km ? parseInt(km) : null,
-            desperfectos: desperfectosNuevo
-        });
+        await crearParte(data);
         cerrarModal('modal-nuevo');
         await cargarPartes();
     } catch (err) {
-        alert('Error al crear parte: ' + err.message);
+        alert('Error al crear: ' + err.message);
+    }
+};
+
+// --- MODAL EDITAR ---
+window.abrirEditar = async function(parteId) {
+    parteEditando = partes.find(p => p.id === parteId);
+    if (!parteEditando) return;
+
+    document.getElementById('modal-editar-titulo').textContent =
+        `${parteEditando.n_parte} - ${parteEditando.dominio}`;
+    document.getElementById('edit-dominio').textContent = parteEditando.dominio;
+    document.getElementById('edit-operacion').textContent = parteEditando.operacion;
+    document.getElementById('edit-tipo-taller').textContent =
+        parteEditando.tipo_taller === 'EXTERNO'
+            ? `EXTERNO - ${parteEditando.taller_externo || ''}`
+            : 'INTERNO';
+
+    // Cargar select de estados
+    const selectEstado = document.getElementById('edit-estado');
+    selectEstado.innerHTML = estadosDisponibles.map(e =>
+        `<option value="${e.nombre}" ${e.nombre === parteEditando.estado ? 'selected' : ''}>${e.nombre}</option>`
+    ).join('');
+
+    document.getElementById('edit-tipo-rep').value = parteEditando.tipo_reparacion || 'RAPIDA';
+    document.getElementById('edit-taller-box').value = parteEditando.taller_box || 'MECANICA';
+    document.getElementById('edit-fecha-fin').value = parteEditando.fecha_probable_fin || '';
+    document.getElementById('edit-novedad').value = parteEditando.novedad || '';
+    document.getElementById('edit-observaciones').value = parteEditando.observaciones || '';
+
+    document.getElementById('modal-editar').classList.add('active');
+};
+
+window.guardarEdicion = async function() {
+    if (!parteEditando) return;
+
+    const data = {
+        estado: document.getElementById('edit-estado').value,
+        tipo_reparacion: document.getElementById('edit-tipo-rep').value,
+        taller_box: document.getElementById('edit-taller-box').value,
+        fecha_probable_fin: document.getElementById('edit-fecha-fin').value || null,
+        novedad: document.getElementById('edit-novedad').value.trim(),
+        observaciones: document.getElementById('edit-observaciones').value.trim() || null,
+    };
+
+    try {
+        await actualizarParte(parteEditando.id, data);
+        cerrarModal('modal-editar');
+        await cargarPartes();
+    } catch (err) {
+        alert('Error al guardar: ' + err.message);
     }
 };
 

@@ -19,11 +19,17 @@ class Parte(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     n_parte = Column(String(20), unique=True, nullable=False)
-    patente = Column(String(60), nullable=False)
-    chofer = Column(String(100), nullable=False)
-    km = Column(Integer)
-    fecha_carga = Column(DateTime, server_default=func.now(), nullable=False)
-    fecha_citacion = Column(Date, nullable=True)
+    dominio = Column(String(60), nullable=False)  # era "patente"
+    operacion = Column(String(60), default="BASE TT")
+    tipo_reparacion = Column(String(20), default="RAPIDA")  # RAPIDA, LENTA, PROFUNDA
+    tipo_taller = Column(String(20), default="INTERNO")  # INTERNO, EXTERNO
+    taller_externo = Column(String(100), nullable=True)  # nombre del taller si es externo
+    novedad = Column(Text, nullable=False)  # descripcion completa del trabajo
+    taller_box = Column(String(50), nullable=True)  # MECANICA, ELECTRICIDAD, HERRERIA, CHAPA/PINTURA, GOMERIA
+    estado = Column(String(50), default="Pendiente", nullable=False)
+    observaciones = Column(Text, nullable=True)
+    fecha_ingreso = Column(Date, nullable=True)
+    fecha_probable_fin = Column(Date, nullable=True)
     alta = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)

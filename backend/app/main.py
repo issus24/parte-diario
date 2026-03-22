@@ -33,18 +33,57 @@ app = FastAPI(
 def on_startup():
     """Crea tablas y seed de estados al iniciar."""
     from sqlalchemy.orm import Session
+    from sqlalchemy import inspect, text
+
+    # Crear tablas nuevas si no existen
     Base.metadata.create_all(bind=engine)
-    # Seed estados predefinidos
+
+    # Agregar columnas faltantes a tabla partes (migracion)
+    with engine.connect() as conn:
+        inspector = inspect(engine)
+        existing_cols = {c["name"] for c in inspector.get_columns("partes")}
+        migrations = {
+            "dominio": "ALTER TABLE partes ADD COLUMN dominio VARCHAR(60)",
+            "operacion": "ALTER TABLE partes ADD COLUMN operacion VARCHAR(60) DEFAULT 'BASE TT'",
+            "tipo_reparacion": "ALTER TABLE partes ADD COLUMN tipo_reparacion VARCHAR(20) DEFAULT 'RAPIDA'",
+            "tipo_taller": "ALTER TABLE partes ADD COLUMN tipo_taller VARCHAR(20) DEFAULT 'INTERNO'",
+            "taller_externo": "ALTER TABLE partes ADD COLUMN taller_externo VARCHAR(100)",
+            "novedad": "ALTER TABLE partes ADD COLUMN novedad TEXT DEFAULT ''",
+            "taller_box": "ALTER TABLE partes ADD COLUMN taller_box VARCHAR(50)",
+            "estado": "ALTER TABLE partes ADD COLUMN estado VARCHAR(50) DEFAULT 'Pendiente'",
+            "observaciones": "ALTER TABLE partes ADD COLUMN observaciones TEXT",
+            "fecha_ingreso": "ALTER TABLE partes ADD COLUMN fecha_ingreso DATE",
+            "fecha_probable_fin": "ALTER TABLE partes ADD COLUMN fecha_probable_fin DATE",
+        }
+        for col, sql in migrations.items():
+            if col not in existing_cols:
+                conn.execute(text(sql))
+        # Migrar patente -> dominio si existe
+        if "patente" in existing_cols and "dominio" not in existing_cols:
+            conn.execute(text("ALTER TABLE partes RENAME COLUMN patente TO dominio"))
+        conn.commit()
+
+    # Seed estados
     with Session(engine) as db:
         if db.query(Estado).count() == 0:
             estados_seed = [
                 Estado(nombre="Pendiente", es_resolutivo=False, color="warning", orden=0),
                 Estado(nombre="En Proceso", es_resolutivo=False, color="info", orden=1),
-                Estado(nombre="Esperando Repuesto", es_resolutivo=False, color="orange", orden=2),
-                Estado(nombre="Reparado", es_resolutivo=True, color="success", orden=3),
-                Estado(nombre="No Aplica", es_resolutivo=True, color="muted", orden=4),
+                Estado(nombre="En Espera", es_resolutivo=False, color="orange", orden=2),
+                Estado(nombre="Esperando Repuesto", es_resolutivo=False, color="orange", orden=3),
+                Estado(nombre="Operativo", es_resolutivo=True, color="success", orden=4),
+                Estado(nombre="No Aplica", es_resolutivo=True, color="muted", orden=5),
             ]
             db.add_all(estados_seed)
+            db.commit()
+        else:
+            # Agregar estados nuevos si no existen
+            for nombre, resolutivo, color, orden in [
+                ("En Espera", False, "orange", 2),
+                ("Operativo", True, "success", 4),
+            ]:
+                if not db.query(Estado).filter(Estado.nombre == nombre).first():
+                    db.add(Estado(nombre=nombre, es_resolutivo=resolutivo, color=color, orden=orden))
             db.commit()
 
 # CORS

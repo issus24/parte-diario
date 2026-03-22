@@ -35,13 +35,16 @@ export async function crearParte(data) {
     return res.json();
 }
 
-export async function asignarFechaCitacion(parteId, fecha_citacion) {
+export async function actualizarParte(parteId, data) {
     const res = await fetch(`${API_BASE_URL}/api/partes/${parteId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fecha_citacion })
+        body: JSON.stringify(data)
     });
-    if (!res.ok) throw new Error(`Error ${res.status}`);
+    if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.detail || `Error ${res.status}`);
+    }
     return res.json();
 }
 

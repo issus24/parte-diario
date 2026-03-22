@@ -1,9 +1,8 @@
-import { getPartes, getParte, getEstados, actualizarEstadoDesperfecto } from './api.js';
+import { getPartes, getParte, getEstados, actualizarParte, actualizarEstadoDesperfecto } from './api.js';
 
-let fechaSeleccionada = new Date();
 let estadosDisponibles = [];
-let partesDelDia = [];
-let otrosPendientes = [];
+let partesActivas = [];
+let partesOperativas = [];
 
 // --- INIT ---
 document.addEventListener('DOMContentLoaded', async () => {
@@ -12,86 +11,46 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (err) {
         console.error('Error cargando estados:', err);
     }
-    actualizarFechaDisplay();
+
+    document.getElementById('filtro-dominio').addEventListener('input', renderUnidades);
+    document.getElementById('filtro-taller-box').addEventListener('change', renderUnidades);
+
     cargarDatos();
 });
 
-function formatFecha(date) {
-    return date.toISOString().split('T')[0];
-}
-
-function formatFechaDisplay(date) {
-    const opciones = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-    let texto = date.toLocaleDateString('es-AR', opciones);
-    // Capitalizar primera letra
-    return texto.charAt(0).toUpperCase() + texto.slice(1);
-}
-
-function actualizarFechaDisplay() {
-    const hoy = formatFecha(new Date());
-    const sel = formatFecha(fechaSeleccionada);
-    let texto = formatFechaDisplay(fechaSeleccionada);
-    if (sel === hoy) texto += ' (Hoy)';
-    document.getElementById('fecha-display').textContent = texto;
-}
-
-window.cambiarFecha = function(delta) {
-    fechaSeleccionada.setDate(fechaSeleccionada.getDate() + delta);
-    actualizarFechaDisplay();
-    cargarDatos();
-};
-
-window.irAHoy = function() {
-    fechaSeleccionada = new Date();
-    actualizarFechaDisplay();
-    cargarDatos();
-};
-
 async function cargarDatos() {
-    const container = document.getElementById('vehiculos-container');
+    const container = document.getElementById('unidades-container');
     container.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
 
     try {
-        const fecha = formatFecha(fechaSeleccionada);
+        const todas = await getPartes();
 
-        // Cargar partes del dia y pendientes en paralelo
-        const [delDia, pendientes] = await Promise.all([
-            getPartes({ fecha_citacion: fecha }),
-            getPartes({ alta: false })
-        ]);
+        // Separar activas vs operativas
+        partesActivas = todas.filter(p => p.estado !== 'Operativo');
+        partesOperativas = todas.filter(p => p.estado === 'Operativo');
 
-        // Obtener detalle completo de cada parte del dia
-        partesDelDia = await Promise.all(delDia.map(p => getParte(p.id)));
+        // Cargar detalle completo de las activas
+        partesActivas = await Promise.all(partesActivas.map(p => getParte(p.id)));
 
-        // Otros pendientes = no del dia actual y sin alta
-        otrosPendientes = pendientes.filter(p =>
-            p.fecha_citacion !== fecha && !p.alta
-        );
-
-        actualizarStatsTaller();
-        renderVehiculos();
-        renderOtrosPendientes();
+        actualizarStats();
+        renderUnidades();
+        renderOperativos();
     } catch (err) {
         console.error('Error cargando datos:', err);
         container.innerHTML = '<div class="empty-state"><p>Error al cargar datos</p></div>';
     }
 }
 
-function actualizarStatsTaller() {
-    const totalDesp = partesDelDia.reduce((sum, p) => sum + p.desperfectos.length, 0);
-    const resueltos = partesDelDia.reduce((sum, p) =>
-        sum + p.desperfectos.filter(d => esResolutivo(d.estado)).length, 0);
-    const altas = partesDelDia.filter(p => p.alta).length;
+function actualizarStats() {
+    const total = partesActivas.length;
+    const pendientes = partesActivas.filter(p => p.estado === 'Pendiente').length;
+    const enProceso = partesActivas.filter(p => p.estado === 'En Proceso').length;
+    const operativos = partesOperativas.length;
 
-    document.getElementById('stat-vehiculos').textContent = partesDelDia.length;
-    document.getElementById('stat-desperfectos').textContent = totalDesp;
-    document.getElementById('stat-resueltos').textContent = resueltos;
-    document.getElementById('stat-altas').textContent = altas;
-}
-
-function esResolutivo(estadoNombre) {
-    const estado = estadosDisponibles.find(e => e.nombre === estadoNombre);
-    return estado ? estado.es_resolutivo : false;
+    document.getElementById('stat-total').textContent = total;
+    document.getElementById('stat-pendientes').textContent = pendientes;
+    document.getElementById('stat-en-proceso').textContent = enProceso;
+    document.getElementById('stat-operativos').textContent = operativos;
 }
 
 function getColorEstado(estadoNombre) {
@@ -99,48 +58,75 @@ function getColorEstado(estadoNombre) {
     return estado ? estado.color : 'muted';
 }
 
-function renderVehiculos() {
-    const container = document.getElementById('vehiculos-container');
+function renderUnidades() {
+    const filtroDominio = document.getElementById('filtro-dominio').value.toUpperCase();
+    const filtroBox = document.getElementById('filtro-taller-box').value;
+    const container = document.getElementById('unidades-container');
 
-    if (partesDelDia.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <p>&#128197; No hay vehiculos citados para este dia</p>
-            </div>`;
+    let datos = partesActivas;
+    if (filtroDominio) datos = datos.filter(p => p.dominio.toUpperCase().includes(filtroDominio));
+    if (filtroBox) datos = datos.filter(p => p.taller_box === filtroBox);
+
+    if (datos.length === 0) {
+        container.innerHTML = '<div class="empty-state"><p>No hay unidades activas en taller</p></div>';
         return;
     }
 
-    container.innerHTML = partesDelDia.map(parte => {
-        const altaClass = parte.alta ? ' alta' : '';
-        const despHtml = parte.desperfectos.map(d => renderDesperfectoItem(d)).join('');
+    container.innerHTML = datos.map(parte => {
+        const colorEstado = getColorEstado(parte.estado);
+        const tipoRepBadge = parte.tipo_reparacion === 'PROFUNDA' ? 'danger'
+            : parte.tipo_reparacion === 'LENTA' ? 'warning' : 'info';
+        const tallerDisplay = parte.tipo_taller === 'EXTERNO' && parte.taller_externo
+            ? `EXTERNO - ${parte.taller_externo}` : (parte.taller_box || '-');
+
+        const selectEstado = estadosDisponibles.map(e =>
+            `<option value="${e.nombre}" ${e.nombre === parte.estado ? 'selected' : ''}>${e.nombre}</option>`
+        ).join('');
+
+        // Desperfectos si los tiene
+        const despHtml = parte.desperfectos && parte.desperfectos.length > 0
+            ? `<div class="desperfectos-section">
+                <div style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); padding:0.5rem 1.25rem; text-transform:uppercase;">Desperfectos</div>
+                <ul class="desperfecto-list">${parte.desperfectos.map(d => renderDesperfecto(d)).join('')}</ul>
+               </div>`
+            : '';
 
         return `
-            <div class="vehiculo-card${altaClass}">
+            <div class="vehiculo-card">
                 <div class="vehiculo-header">
                     <div>
-                        <span class="patente">${parte.patente}</span>
-                        ${parte.alta ? '<span class="badge badge-success" style="margin-left:0.5rem;">ALTA</span>' : ''}
+                        <span class="patente">${parte.dominio}</span>
+                        <span class="badge badge-${tipoRepBadge}" style="margin-left:0.5rem;">${parte.tipo_reparacion}</span>
+                        <span class="badge badge-${colorEstado}" style="margin-left:0.25rem;">${parte.estado}</span>
                     </div>
                     <div class="info">
-                        ${parte.chofer} | ${parte.km ? parte.km + ' km' : ''} | ${parte.n_parte}
+                        ${parte.operacion} | ${tallerDisplay} | ${parte.n_parte}
                     </div>
                 </div>
-                <ul class="desperfecto-list">
-                    ${despHtml}
-                </ul>
+                <div style="padding:0.75rem 1.25rem;">
+                    <div style="font-size:0.9rem; margin-bottom:0.5rem;">${parte.novedad}</div>
+                    ${parte.observaciones ? `<div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.5rem;">&#128221; ${parte.observaciones}</div>` : ''}
+                    <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+                        <select class="form-control" onchange="cambiarEstadoParte(${parte.id}, this.value)" style="width:180px; font-size:0.85rem;">
+                            ${selectEstado}
+                        </select>
+                        <button class="btn btn-outline btn-sm" onclick="editarObservaciones(${parte.id})">&#128221; Observaciones</button>
+                    </div>
+                </div>
+                ${despHtml}
             </div>`;
     }).join('');
 }
 
-function renderDesperfectoItem(desp) {
-    const sectorClass = desp.sector.toLowerCase();
+function renderDesperfecto(desp) {
+    const sectorClass = desp.sector.toLowerCase().replace('/', '-');
     const colorEstado = getColorEstado(desp.estado);
     const selectOptions = estadosDisponibles.map(e =>
         `<option value="${e.nombre}" ${e.nombre === desp.estado ? 'selected' : ''}>${e.nombre}</option>`
     ).join('');
 
     return `
-        <li class="desperfecto-item" id="desp-${desp.id}">
+        <li class="desperfecto-item">
             <div class="desperfecto-info">
                 <span class="badge badge-${sectorClass}">${desp.sector}</span>
                 <span class="badge badge-${colorEstado}" style="margin-left:0.25rem;">${desp.estado}</span>
@@ -148,7 +134,7 @@ function renderDesperfectoItem(desp) {
                 ${desp.notas ? `<div style="font-size:0.8rem; color:var(--text-secondary); margin-top:0.2rem;">&#128221; ${desp.notas}</div>` : ''}
             </div>
             <div class="desperfecto-actions">
-                <select class="form-control" onchange="cambiarEstado(${desp.id}, this.value)" style="min-width:160px;">
+                <select class="form-control" onchange="cambiarEstadoDesp(${desp.id}, this.value)" style="min-width:150px;">
                     ${selectOptions}
                 </select>
                 <button class="btn btn-outline btn-sm" onclick="agregarNota(${desp.id})" title="Agregar nota">&#128221;</button>
@@ -156,10 +142,19 @@ function renderDesperfectoItem(desp) {
         </li>`;
 }
 
-window.cambiarEstado = async function(desperfectoId, nuevoEstado) {
+window.cambiarEstadoParte = async function(parteId, nuevoEstado) {
+    try {
+        await actualizarParte(parteId, { estado: nuevoEstado });
+        await cargarDatos();
+    } catch (err) {
+        alert('Error al actualizar: ' + err.message);
+    }
+};
+
+window.cambiarEstadoDesp = async function(desperfectoId, nuevoEstado) {
     try {
         await actualizarEstadoDesperfecto(desperfectoId, nuevoEstado);
-        await cargarDatos(); // Recargar para ver cambios y auto-alta
+        await cargarDatos();
     } catch (err) {
         alert('Error al actualizar: ' + err.message);
     }
@@ -170,11 +165,12 @@ window.agregarNota = async function(desperfectoId) {
     if (nota === null) return;
 
     try {
-        // Buscar el estado actual
         let estadoActual = 'Pendiente';
-        for (const parte of partesDelDia) {
-            const desp = parte.desperfectos.find(d => d.id === desperfectoId);
-            if (desp) { estadoActual = desp.estado; break; }
+        for (const parte of partesActivas) {
+            if (parte.desperfectos) {
+                const desp = parte.desperfectos.find(d => d.id === desperfectoId);
+                if (desp) { estadoActual = desp.estado; break; }
+            }
         }
         await actualizarEstadoDesperfecto(desperfectoId, estadoActual, nota);
         await cargarDatos();
@@ -183,19 +179,32 @@ window.agregarNota = async function(desperfectoId) {
     }
 };
 
-// --- OTROS PENDIENTES ---
-function renderOtrosPendientes() {
-    const btnPendientes = document.getElementById('btn-pendientes');
-    const container = document.getElementById('otros-pendientes');
+window.editarObservaciones = async function(parteId) {
+    const parte = partesActivas.find(p => p.id === parteId);
+    const obs = prompt('Observaciones:', parte?.observaciones || '');
+    if (obs === null) return;
 
-    if (otrosPendientes.length === 0) {
-        btnPendientes.style.display = 'none';
+    try {
+        await actualizarParte(parteId, { observaciones: obs });
+        await cargarDatos();
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
+};
+
+// --- OPERATIVOS ---
+function renderOperativos() {
+    const btn = document.getElementById('btn-operativos');
+    const container = document.getElementById('operativos-container');
+
+    if (partesOperativas.length === 0) {
+        btn.style.display = 'none';
         container.style.display = 'none';
         return;
     }
 
-    btnPendientes.style.display = 'inline-flex';
-    btnPendientes.textContent = `▼ Ver otros partes pendientes (${otrosPendientes.length})`;
+    btn.style.display = 'inline-flex';
+    btn.innerHTML = `&#9660; Ver unidades operativas (${partesOperativas.length})`;
 
     container.innerHTML = `
         <div class="card">
@@ -203,21 +212,22 @@ function renderOtrosPendientes() {
                 <table>
                     <thead>
                         <tr>
-                            <th>N Parte</th>
-                            <th>Patente</th>
-                            <th>Chofer</th>
-                            <th>Desp.</th>
-                            <th>Citado para</th>
+                            <th>N&#176;</th>
+                            <th>Dominio</th>
+                            <th>Novedad</th>
+                            <th>Taller/Box</th>
+                            <th>T. Rep.</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${otrosPendientes.map(p => `
+                        ${partesOperativas.map(p => `
                             <tr>
                                 <td>${p.n_parte}</td>
-                                <td style="font-family:monospace; font-weight:600;">${p.patente}</td>
-                                <td>${p.chofer}</td>
-                                <td>${p.cant_resueltos}/${p.cant_desperfectos}</td>
-                                <td>${p.fecha_citacion ? new Date(p.fecha_citacion + 'T12:00:00').toLocaleDateString('es-AR') : 'Sin citar'}</td>
+                                <td style="font-family:monospace; font-weight:600;">${p.dominio}</td>
+                                <td style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
+                                    title="${(p.novedad || '').replace(/"/g, '&quot;')}">${p.novedad || '-'}</td>
+                                <td>${p.taller_box || '-'}</td>
+                                <td>${p.tipo_reparacion || '-'}</td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -226,8 +236,8 @@ function renderOtrosPendientes() {
         </div>`;
 }
 
-window.togglePendientes = function() {
-    const container = document.getElementById('otros-pendientes');
+window.toggleOperativos = function() {
+    const container = document.getElementById('operativos-container');
     const visible = container.style.display !== 'none';
     container.style.display = visible ? 'none' : 'block';
 };

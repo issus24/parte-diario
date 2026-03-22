@@ -7,7 +7,7 @@ from datetime import date
 from app.core.database import get_db
 from app.models import Parte, Desperfecto, Estado
 from app.schemas.partes import (
-    ParteCreate, ParteUpdateFecha, ParteResponse, ParteListItem
+    ParteCreate, ParteUpdate, ParteResponse, ParteListItem
 )
 
 router = APIRouter(prefix="/partes", tags=["partes"])
@@ -27,33 +27,39 @@ def generar_n_parte(db: Session) -> str:
 
 
 def recalcular_alta(db: Session, parte_id: int):
-    """Recalcula si un parte tiene alta (todos desperfectos resueltos)."""
-    desperfectos = db.query(Desperfecto).filter(Desperfecto.parte_id == parte_id).all()
-    if not desperfectos:
+    """Recalcula si un parte tiene alta (todos desperfectos resueltos + estado Operativo)."""
+    parte = db.query(Parte).filter(Parte.id == parte_id).first()
+    if not parte:
         return
 
-    # Obtener estados resolutivos
+    # Si el estado del parte es Operativo, dar alta
     estados_resolutivos = db.query(Estado.nombre).filter(Estado.es_resolutivo == True).all()
     nombres_resolutivos = {e.nombre for e in estados_resolutivos}
 
-    todos_resueltos = all(d.estado in nombres_resolutivos for d in desperfectos)
+    if parte.estado in nombres_resolutivos:
+        parte.alta = True
+    else:
+        # Verificar desperfectos si los hay
+        desperfectos = db.query(Desperfecto).filter(Desperfecto.parte_id == parte_id).all()
+        if desperfectos:
+            todos_resueltos = all(d.estado in nombres_resolutivos for d in desperfectos)
+            parte.alta = todos_resueltos
+        else:
+            parte.alta = False
 
-    parte = db.query(Parte).filter(Parte.id == parte_id).first()
-    if parte:
-        parte.alta = todos_resueltos
-        db.commit()
+    db.commit()
 
 
 @router.get("/", response_model=list[ParteListItem])
 def listar_partes(
-    fecha_citacion: Optional[date] = None,
+    tipo_taller: Optional[str] = None,
+    estado: Optional[str] = None,
     alta: Optional[bool] = None,
-    sin_citar: Optional[bool] = None,
-    patente: Optional[str] = None,
+    dominio: Optional[str] = None,
+    taller_box: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
     """Lista partes con filtros opcionales."""
-    # Subquery para contar desperfectos y resueltos
     estados_resolutivos = db.query(Estado.nombre).filter(Estado.es_resolutivo == True).subquery()
 
     query = db.query(
@@ -67,16 +73,18 @@ def listar_partes(
         ).label("cant_resueltos")
     ).outerjoin(Desperfecto).group_by(Parte.id)
 
-    if fecha_citacion:
-        query = query.filter(Parte.fecha_citacion == fecha_citacion)
+    if tipo_taller:
+        query = query.filter(Parte.tipo_taller == tipo_taller)
+    if estado:
+        query = query.filter(Parte.estado == estado)
     if alta is not None:
         query = query.filter(Parte.alta == alta)
-    if sin_citar:
-        query = query.filter(Parte.fecha_citacion.is_(None))
-    if patente:
-        query = query.filter(Parte.patente.ilike(f"%{patente}%"))
+    if dominio:
+        query = query.filter(Parte.dominio.ilike(f"%{dominio}%"))
+    if taller_box:
+        query = query.filter(Parte.taller_box == taller_box)
 
-    query = query.order_by(Parte.fecha_carga.desc())
+    query = query.order_by(Parte.created_at.desc())
     results = query.all()
 
     items = []
@@ -84,11 +92,17 @@ def listar_partes(
         items.append(ParteListItem(
             id=parte.id,
             n_parte=parte.n_parte,
-            patente=parte.patente,
-            chofer=parte.chofer,
-            km=parte.km,
-            fecha_carga=parte.fecha_carga,
-            fecha_citacion=parte.fecha_citacion,
+            dominio=parte.dominio,
+            operacion=parte.operacion,
+            tipo_reparacion=parte.tipo_reparacion,
+            tipo_taller=parte.tipo_taller,
+            taller_externo=parte.taller_externo,
+            novedad=parte.novedad,
+            taller_box=parte.taller_box,
+            estado=parte.estado,
+            observaciones=parte.observaciones,
+            fecha_ingreso=parte.fecha_ingreso,
+            fecha_probable_fin=parte.fecha_probable_fin,
             alta=parte.alta,
             cant_desperfectos=cant_desp or 0,
             cant_resueltos=int(cant_res or 0)
@@ -110,25 +124,28 @@ def obtener_parte(parte_id: int, db: Session = Depends(get_db)):
 
 @router.post("/", response_model=ParteResponse, status_code=201)
 def crear_parte(data: ParteCreate, db: Session = Depends(get_db)):
-    """Crea un parte con sus desperfectos."""
-    if not data.desperfectos:
-        raise HTTPException(status_code=400, detail="Debe incluir al menos un desperfecto")
-
+    """Crea un parte con sus desperfectos opcionales."""
     n_parte = data.n_parte or generar_n_parte(db)
 
-    # Verificar que no exista
     existe = db.query(Parte).filter(Parte.n_parte == n_parte).first()
     if existe:
         raise HTTPException(status_code=409, detail=f"Ya existe un parte con N {n_parte}")
 
     parte = Parte(
         n_parte=n_parte,
-        patente=data.patente.upper(),
-        chofer=data.chofer,
-        km=data.km
+        dominio=data.dominio.upper(),
+        operacion=data.operacion.upper(),
+        tipo_reparacion=data.tipo_reparacion.upper(),
+        tipo_taller=data.tipo_taller.upper(),
+        taller_externo=data.taller_externo,
+        novedad=data.novedad,
+        taller_box=data.taller_box.upper() if data.taller_box else None,
+        observaciones=data.observaciones,
+        fecha_ingreso=data.fecha_ingreso or date.today(),
+        fecha_probable_fin=data.fecha_probable_fin,
     )
     db.add(parte)
-    db.flush()  # para obtener el id
+    db.flush()
 
     for desp in data.desperfectos:
         desperfecto = Desperfecto(
@@ -144,8 +161,8 @@ def crear_parte(data: ParteCreate, db: Session = Depends(get_db)):
 
 
 @router.patch("/{parte_id}", response_model=ParteResponse)
-def actualizar_parte(parte_id: int, data: ParteUpdateFecha, db: Session = Depends(get_db)):
-    """Actualiza fecha de citacion de un parte (Coordinacion)."""
+def actualizar_parte(parte_id: int, data: ParteUpdate, db: Session = Depends(get_db)):
+    """Actualiza campos de un parte."""
     parte = db.query(Parte).options(
         joinedload(Parte.desperfectos)
     ).filter(Parte.id == parte_id).first()
@@ -153,7 +170,29 @@ def actualizar_parte(parte_id: int, data: ParteUpdateFecha, db: Session = Depend
     if not parte:
         raise HTTPException(status_code=404, detail="Parte no encontrado")
 
-    parte.fecha_citacion = data.fecha_citacion
+    if data.estado is not None:
+        # Validar que el estado exista
+        estado_obj = db.query(Estado).filter(Estado.nombre == data.estado).first()
+        if not estado_obj:
+            raise HTTPException(status_code=400, detail=f"Estado '{data.estado}' no existe")
+        parte.estado = data.estado
+
+    if data.observaciones is not None:
+        parte.observaciones = data.observaciones
+    if data.fecha_probable_fin is not None:
+        parte.fecha_probable_fin = data.fecha_probable_fin
+    if data.taller_box is not None:
+        parte.taller_box = data.taller_box.upper()
+    if data.novedad is not None:
+        parte.novedad = data.novedad
+    if data.tipo_reparacion is not None:
+        parte.tipo_reparacion = data.tipo_reparacion.upper()
+
     db.commit()
     db.refresh(parte)
+
+    # Recalcular alta
+    recalcular_alta(db, parte_id)
+    db.refresh(parte)
+
     return parte

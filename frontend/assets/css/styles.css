@@ -500,3 +500,53 @@ table tbody tr:hover {
     .stats-grid { grid-template-columns: 1fr; }
     .navbar h1 { font-size: 0.95rem; }
 }
+
+/* --- TABS --- */
+.tabs {
+    display: flex;
+    gap: 0.25rem;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 0;
+}
+
+.tab-btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    background: transparent;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s;
+}
+
+.tab-btn:hover {
+    color: var(--text);
+}
+
+.tab-btn.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+    font-weight: 600;
+}
+
+/* --- FORM LABEL SMALL --- */
+.form-label-sm {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.2rem;
+}
+
+/* --- CHAPA/PINTURA badge --- */
+.badge-chapa-pintura { background: #fae8ff; color: #86198f; }
+
+/* --- DESPERFECTOS SECTION --- */
+.desperfectos-section {
+    border-top: 1px solid var(--border);
+}
