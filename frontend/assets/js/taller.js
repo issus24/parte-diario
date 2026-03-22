@@ -138,8 +138,8 @@ function renderTabla() {
                 const dEstColor = getColorEstado(d.estado);
                 return `<div class="desp-line">
                     <span class="badge badge-${sColor}">${d.sector}</span>
-                    <span class="badge badge-${dEstColor}" style="margin-left:2px;">${d.estado}</span>
-                    ${d.descripcion}
+                    <span class="badge badge-${dEstColor}">${d.estado}</span>
+                    <span class="desp-desc">${d.descripcion}</span>
                 </div>`;
             }).join('');
         } else {

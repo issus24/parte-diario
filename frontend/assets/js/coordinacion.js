@@ -103,7 +103,7 @@ function renderTabla() {
         if (p._desperfectos && p._desperfectos.length > 0) {
             novedadHtml = p._desperfectos.map(d => {
                 const sColor = sectorColor(d.sector);
-                return `<div class="desp-line"><span class="badge badge-${sColor}">${d.sector}</span> ${d.descripcion}</div>`;
+                return `<div class="desp-line"><span class="badge badge-${sColor}">${d.sector}</span><span class="desp-desc">${d.descripcion}</span></div>`;
             }).join('');
         } else {
             const problemas = (p.novedad || '').split('. ').filter(t => t.trim());
@@ -211,7 +211,7 @@ window.abrirAsignar = function(parteId) {
     if (parteSeleccionado._desperfectos && parteSeleccionado._desperfectos.length > 0) {
         probEl.innerHTML = parteSeleccionado._desperfectos.map(d => {
             const sColor = sectorColor(d.sector);
-            return `<div class="desp-line"><span class="badge badge-${sColor}">${d.sector}</span> ${d.descripcion}</div>`;
+            return `<div class="desp-line"><span class="badge badge-${sColor}">${d.sector}</span><span class="desp-desc">${d.descripcion}</span></div>`;
         }).join('');
     } else {
         probEl.innerHTML = `<div style="font-size:0.8rem; color:var(--text-secondary);">${parteSeleccionado.novedad || ''}</div>`;

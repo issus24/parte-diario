@@ -252,7 +252,10 @@ table tbody tr:hover { background: var(--bg-card-hover); }
 table { width: 100%; }
 
 .desp-line {
-    padding: 0.2rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0;
     border-bottom: 1px dashed var(--border);
     font-size: 0.75rem;
     color: var(--text-secondary);
@@ -260,7 +263,9 @@ table { width: 100%; }
 
 .desp-line:last-child { border-bottom: none; }
 
-.desp-line .badge { margin-right: 0.3rem; font-size: 0.6rem; vertical-align: middle; }
+.desp-line .badge { font-size: 0.6rem; min-width: 75px; justify-content: center; text-align: center; flex-shrink: 0; }
+
+.desp-line .desp-desc { flex: 1; }
 
 /* Filter row in table header */
 .filter-row td {
