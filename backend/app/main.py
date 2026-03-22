@@ -76,6 +76,19 @@ def on_startup():
                         conn.execute(text(f"ALTER TABLE partes ALTER COLUMN {old_col} DROP NOT NULL"))
                     except Exception:
                         pass
+            # Migrar partes existentes: si tienen fecha_ingreso y estado != 'Pendiente de Ingreso', confirmar ingreso
+            conn.execute(text("""
+                UPDATE partes SET ingreso_confirmado = TRUE
+                WHERE fecha_ingreso IS NOT NULL
+                AND (ingreso_confirmado IS NULL OR ingreso_confirmado = FALSE)
+                AND estado != 'Pendiente de Ingreso'
+            """))
+            # Partes sin fecha_ingreso que no sean Pendiente de Ingreso, actualizar estado
+            conn.execute(text("""
+                UPDATE partes SET estado = 'Pendiente de Ingreso'
+                WHERE fecha_ingreso IS NULL
+                AND estado NOT IN ('Operativo', 'Pendiente de Ingreso')
+            """))
             conn.commit()
 
     # Seed estados
