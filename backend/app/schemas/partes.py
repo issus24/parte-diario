@@ -49,7 +49,9 @@ class ParteCreate(BaseModel):
 class ParteUpdate(BaseModel):
     estado: Optional[str] = None
     observaciones: Optional[str] = None
+    fecha_ingreso: Optional[date] = None
     fecha_probable_fin: Optional[date] = None
+    tipo_taller: Optional[str] = None
     taller_box: Optional[str] = None
     novedad: Optional[str] = None
     tipo_reparacion: Optional[str] = None
