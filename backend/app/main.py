@@ -38,30 +38,31 @@ def on_startup():
     # Crear tablas nuevas si no existen
     Base.metadata.create_all(bind=engine)
 
-    # Agregar columnas faltantes a tabla partes (migracion)
+    # Migrar columnas si es necesario (tabla existente pre-restructura)
     with engine.connect() as conn:
         inspector = inspect(engine)
-        existing_cols = {c["name"] for c in inspector.get_columns("partes")}
-        migrations = {
-            "dominio": "ALTER TABLE partes ADD COLUMN dominio VARCHAR(60)",
-            "operacion": "ALTER TABLE partes ADD COLUMN operacion VARCHAR(60) DEFAULT 'BASE TT'",
-            "tipo_reparacion": "ALTER TABLE partes ADD COLUMN tipo_reparacion VARCHAR(20) DEFAULT 'RAPIDA'",
-            "tipo_taller": "ALTER TABLE partes ADD COLUMN tipo_taller VARCHAR(20) DEFAULT 'INTERNO'",
-            "taller_externo": "ALTER TABLE partes ADD COLUMN taller_externo VARCHAR(100)",
-            "novedad": "ALTER TABLE partes ADD COLUMN novedad TEXT DEFAULT ''",
-            "taller_box": "ALTER TABLE partes ADD COLUMN taller_box VARCHAR(50)",
-            "estado": "ALTER TABLE partes ADD COLUMN estado VARCHAR(50) DEFAULT 'Pendiente'",
-            "observaciones": "ALTER TABLE partes ADD COLUMN observaciones TEXT",
-            "fecha_ingreso": "ALTER TABLE partes ADD COLUMN fecha_ingreso DATE",
-            "fecha_probable_fin": "ALTER TABLE partes ADD COLUMN fecha_probable_fin DATE",
-        }
-        for col, sql in migrations.items():
-            if col not in existing_cols:
-                conn.execute(text(sql))
-        # Migrar patente -> dominio si existe
-        if "patente" in existing_cols and "dominio" not in existing_cols:
-            conn.execute(text("ALTER TABLE partes RENAME COLUMN patente TO dominio"))
-        conn.commit()
+        if inspector.has_table("partes"):
+            existing_cols = {c["name"] for c in inspector.get_columns("partes")}
+            # Solo migrar si la tabla vieja tiene "patente" y no tiene "dominio"
+            if "patente" in existing_cols and "dominio" not in existing_cols:
+                conn.execute(text("ALTER TABLE partes RENAME COLUMN patente TO dominio"))
+            # Agregar columnas nuevas que falten
+            new_cols = {
+                "operacion": "VARCHAR(60) DEFAULT 'BASE TT'",
+                "tipo_reparacion": "VARCHAR(20) DEFAULT 'RAPIDA'",
+                "tipo_taller": "VARCHAR(20) DEFAULT 'INTERNO'",
+                "taller_externo": "VARCHAR(100)",
+                "novedad": "TEXT DEFAULT ''",
+                "taller_box": "VARCHAR(50)",
+                "estado": "VARCHAR(50) DEFAULT 'Pendiente'",
+                "observaciones": "TEXT",
+                "fecha_ingreso": "DATE",
+                "fecha_probable_fin": "DATE",
+            }
+            for col, col_type in new_cols.items():
+                if col not in existing_cols:
+                    conn.execute(text(f"ALTER TABLE partes ADD COLUMN {col} {col_type}"))
+            conn.commit()
 
     # Seed estados
     with Session(engine) as db:
